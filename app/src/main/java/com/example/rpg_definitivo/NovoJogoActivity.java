@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class NovoJogoActivity extends Activity {
@@ -23,8 +24,11 @@ public class NovoJogoActivity extends Activity {
     // Os de andar voltam a ser Button normal:
     private Button btnUp, btnDown, btnLeft, btnRight;
 
-    // Ação e Pause ficam como ImageButton:
-    private ImageButton btnAction, btnPause;
+    // Ação e Pause:
+    private ImageButton btnAction;
+    private View btnPause;
+    private View pauseMenuContainer;
+    private TextView tvContinuar, tvSalvar, tvSairJogo;
 
     // =========================================================================
     // FIELDS — Estado das "Teclas" (D-Pad Virtual)
@@ -45,6 +49,9 @@ public class NovoJogoActivity extends Activity {
     private Handler gameHandler = new Handler();
     private final int FPS = 60;
     private final int FRAME_TIME = 1000 / FPS;
+
+    private String currentSlotId = null;
+    private String currentSlotName = "Novo Jogo";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +77,24 @@ public class NovoJogoActivity extends Activity {
 
         // 3. Inicia o Loop do Jogo
         startGameLoop();
+
+        // 4. Se veio para carregar save:
+        if (getIntent().hasExtra("slot_id")) {
+            currentSlotId = getIntent().getStringExtra("slot_id");
+            aplicarSave(currentSlotId);
+        }
+    }
+
+    private void aplicarSave(String slotId) {
+        SaveSystem.SaveSlot slot = SaveSystem.carregarSlot(this, slotId);
+        if (slot != null) {
+            currentSlotName = slot.name;
+            // Usamos post para garantir que a UI já foi desenhada
+            playerView.post(() -> {
+                playerView.setX(slot.playerX);
+                playerView.setY(slot.playerY);
+            });
+        }
     }
 
     private void linkarInterface() {
@@ -84,8 +109,23 @@ public class NovoJogoActivity extends Activity {
         btnAction = findViewById(R.id.btn_action);
         btnPause = findViewById(R.id.btn_pause);
 
+        pauseMenuContainer = findViewById(R.id.pause_menu_container);
+        tvContinuar = findViewById(R.id.tv_continuar);
+        tvSalvar = findViewById(R.id.tv_salvar);
+        tvSairJogo = findViewById(R.id.tv_sair_jogo);
+
         // Ação do botão de Pause/Menu
         btnPause.setOnClickListener(v -> togglePause());
+
+        tvContinuar.setOnClickListener(v -> togglePause());
+
+        tvSalvar.setOnClickListener(v -> {
+            showSaveDialog();
+        });
+
+        tvSairJogo.setOnClickListener(v -> {
+            finish(); // Volta para a tela inicial (MainActivity)
+        });
 
         // Ação do botão de Ação (ex: Usar poção, atacar)
         btnAction.setOnClickListener(v -> {
@@ -94,6 +134,32 @@ public class NovoJogoActivity extends Activity {
                 Toast.makeText(this, "AÇÃO!", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void showSaveDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Salvar Jogo");
+
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setText(currentSlotName);
+        builder.setView(input);
+
+        builder.setPositiveButton("Salvar", (dialog, which) -> {
+            String name = input.getText().toString();
+            if (name.isEmpty()) name = "Sem Nome";
+            
+            if (currentSlotId == null) {
+                currentSlotId = String.valueOf(System.currentTimeMillis());
+            }
+            currentSlotName = name;
+            
+            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY());
+            Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
+            togglePause();
+        });
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
+
+        builder.show();
     }
 
     /**
@@ -178,10 +244,9 @@ public class NovoJogoActivity extends Activity {
 
         if (isPaused) {
             resetMovement();
-            // TODO: Mostrar tela de Pause (ex: abrir um Dialog ou tornar um layout visível)
-            Toast.makeText(this, "Jogo Pausado", Toast.LENGTH_SHORT).show();
+            pauseMenuContainer.setVisibility(View.VISIBLE);
         } else {
-            Toast.makeText(this, "Jogo Retomado", Toast.LENGTH_SHORT).show();
+            pauseMenuContainer.setVisibility(View.GONE);
         }
     }
 

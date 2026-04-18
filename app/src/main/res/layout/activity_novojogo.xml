@@ -24,44 +24,61 @@
         android:layout_height="match_parent"
         android:padding="16dp">
 
+        <!-- Barra HP (Superior Esquerda) -->
         <ImageView
             android:id="@+id/imageView2"
-            android:layout_width="218dp"
-            android:layout_height="92dp"
+            android:layout_width="210dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:layout_marginStart="14dp"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="20dp"
             android:adjustViewBounds="true"
             android:src="@drawable/barra_hp_completo" />
 
-        <ImageButton
-            android:id="@+id/btn_pause"
-            android:layout_width="183dp"
-            android:layout_height="108dp"
+        <!-- Apenas a IMAGEM do Menu (não clicável aqui) -->
+        <ImageView
+            android:id="@+id/iv_menu_visual"
+            android:layout_width="210dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:background="@android:color/transparent"
+            android:layout_marginTop="20dp"
+            android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:src="@drawable/menu" />
 
+        <!-- ÁREA DE CLIQUE REAL (Invisível e precisa) -->
+        <View
+            android:id="@+id/btn_pause"
+            android:layout_width="210dp"
+            android:layout_height="60dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Moedas (Superior Direita) -->
         <ImageView
             android:id="@+id/imageView"
-            android:layout_width="205dp"
-            android:layout_height="105dp"
-            android:layout_above="@+id/btn_action"
-            android:layout_marginStart="52dp"
-            android:layout_marginBottom="187dp"
-            android:layout_toEndOf="@+id/btn_pause"
+            android:layout_width="210dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="20dp"
             android:adjustViewBounds="true"
             android:src="@drawable/moedas" />
 
+        <!-- Botão Ação/Lutar (Inferior Direita) -->
         <RelativeLayout
             android:id="@+id/relativeLayout"
             android:layout_width="160dp"
             android:layout_height="160dp"
             android:layout_alignParentStart="true"
-            android:layout_alignParentBottom="true">
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="40dp"
+            android:layout_marginBottom="25dp">
 
             <Button
                 android:id="@+id/btn_up"
@@ -98,14 +115,73 @@
 
         <ImageButton
             android:id="@+id/btn_action"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="220dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
+            android:adjustViewBounds="true"
             android:background="@android:color/transparent"
+            android:contentDescription="Lutar"
             android:scaleType="fitCenter"
-            android:src="@drawable/acao"
-            android:contentDescription="Lutar" />
+            android:src="@drawable/acao" />
 
     </RelativeLayout>
+
+    <!-- Overlay do Menu de Pause -->
+    <LinearLayout
+        android:id="@+id/pause_menu_container"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="#CC000000"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_continuar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="Continuar"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_salvar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="Salvar Jogo"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_sair_jogo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="Sair para o Menu"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 </FrameLayout>

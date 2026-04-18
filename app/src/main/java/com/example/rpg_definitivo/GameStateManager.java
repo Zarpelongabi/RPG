@@ -3,8 +3,6 @@ package com.example.rpg_definitivo;
 import android.app.Activity;
 import android.view.View;
 import android.widget.ImageView;
-
-// NOTE QUE NÃO TEM "extends Activity" AQUI!
 public class GameStateManager {
 
     private Activity activity;
