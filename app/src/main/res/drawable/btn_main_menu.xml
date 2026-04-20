@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado Pressionado -->
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#FF0000" /> <!-- Borda brilhante ao clicar -->
+                    <corners android:radius="2dp" />
+                </shape>
+            </item>
+            <item android:top="2dp" android:bottom="2dp" android:left="2dp" android:right="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#440000" />
+                    <corners android:radius="2dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+
+    <!-- Estado Normal -->
+    <item>
+        <layer-list>
+            <!-- Sombra externa sutil -->
+            <item android:top="2dp" android:left="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#80000000" />
+                    <corners android:radius="2dp" />
+                </shape>
+            </item>
+            <!-- Borda Externa (Cor de Sangue Seco/Ferro) -->
+            <item android:bottom="2dp" android:right="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#660000" />
+                    <corners android:radius="2dp" />
+                </shape>
+            </item>
+            <!-- Fundo Interno (Gradiente Escuro Profundo) -->
+            <item android:bottom="4dp" android:right="4dp" android:top="2dp" android:left="2dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:angle="270"
+                        android:startColor="#E62B2B2B"
+                        android:centerColor="#E61A1A1A"
+                        android:endColor="#E6000000" />
+                    <corners android:radius="1dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

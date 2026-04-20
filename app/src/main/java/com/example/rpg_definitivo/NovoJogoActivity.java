@@ -17,7 +17,7 @@ public class NovoJogoActivity extends Activity {
     // =========================================================================
     // FIELDS — Componentes da UI (XML)
     // =========================================================================
-    private ImageView playerView;
+    private PlayerView playerView;
     private ImageView mapView;
     private FrameLayout mainLayout;
 
@@ -215,18 +215,35 @@ public class NovoJogoActivity extends Activity {
      * Equivalente ao conteúdo do seu playerMovement.start() e enemyAI.start()
      */
     private void atualizarJogo() {
-        // Exemplo simples de movimentação do ImageView na tela:
         int velocidade = 5;
+        boolean movendo = false;
 
-        if (keyUp)    playerView.setY(playerView.getY() - velocidade);
-        if (keyDown)  playerView.setY(playerView.getY() + velocidade);
-        if (keyLeft)  playerView.setX(playerView.getX() - velocidade);
-        if (keyRight) playerView.setX(playerView.getX() + velocidade);
+        if (keyUp) {
+            playerView.setY(playerView.getY() - velocidade);
+            playerView.setDirection(3); // Cima
+            movendo = true;
+        } else if (keyDown) {
+            playerView.setY(playerView.getY() + velocidade);
+            playerView.setDirection(0); // Baixo
+            movendo = true;
+        } else if (keyLeft) {
+            playerView.setX(playerView.getX() - velocidade);
+            playerView.setDirection(1); // Esquerda
+            movendo = true;
+        } else if (keyRight) {
+            playerView.setX(playerView.getX() + velocidade);
+            playerView.setDirection(2); // Direita
+            movendo = true;
+        }
 
-        // Aqui também entraria a lógica de:
-        // - Atualizar inimigos (enemyManager.update())
-        // - Checar colisões (checkNpcCollision())
-        // - Trocar animação do sprite do jogador
+        if (movendo) {
+            // Controle de velocidade da animação (muda frame a cada X iterações)
+            if (System.currentTimeMillis() % 150 < 20) {
+                playerView.nextFrame();
+            }
+        } else {
+            playerView.resetFrame();
+        }
     }
 
     // =========================================================================
