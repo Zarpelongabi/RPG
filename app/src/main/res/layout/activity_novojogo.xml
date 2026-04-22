@@ -8,10 +8,8 @@
     <ImageView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:adjustViewBounds="true"
-        android:scaleType="center"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
         android:src="@drawable/fundo" />
 
     <!-- PERSONAGEM -->
@@ -215,4 +213,13 @@
 
         </LinearLayout>
     </FrameLayout>
+
+    <!-- TRANSIÇÃO DE TELA -->
+    <View
+        android:id="@+id/view_transition"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:alpha="0"
+        android:visibility="gone" />
 </FrameLayout>
