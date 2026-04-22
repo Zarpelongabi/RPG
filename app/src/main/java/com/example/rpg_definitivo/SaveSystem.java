@@ -18,12 +18,14 @@ public class SaveSystem {
         public String name;
         public float playerX;
         public float playerY;
+        public int rota; // Adicionado: Rota atual
 
-        public SaveSlot(String id, String name, float playerX, float playerY) {
+        public SaveSlot(String id, String name, float playerX, float playerY, int rota) {
             this.id = id;
             this.name = name;
             this.playerX = playerX;
             this.playerY = playerY;
+            this.rota = rota;
         }
 
         public JSONObject toInterface() throws JSONException {
@@ -32,6 +34,7 @@ public class SaveSystem {
             json.put("name", name);
             json.put("playerX", playerX);
             json.put("playerY", playerY);
+            json.put("rota", rota);
             return json;
         }
 
@@ -40,25 +43,26 @@ public class SaveSystem {
                 json.getString("id"),
                 json.getString("name"),
                 (float) json.getDouble("playerX"),
-                (float) json.getDouble("playerY")
+                (float) json.getDouble("playerY"),
+                json.optInt("rota", 1) // Padrão rota 1 se não existir
             );
         }
     }
 
-    public static void salvarJogo(Context context, String slotId, String slotName, float x, float y) {
+    public static void salvarJogo(Context context, String slotId, String slotName, float x, float y, int rota) {
         List<SaveSlot> slots = carregarTodosSaves(context);
         boolean found = false;
 
         for (int i = 0; i < slots.size(); i++) {
             if (slots.get(i).id.equals(slotId)) {
-                slots.set(i, new SaveSlot(slotId, slotName, x, y));
+                slots.set(i, new SaveSlot(slotId, slotName, x, y, rota));
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            slots.add(new SaveSlot(slotId, slotName, x, y));
+            slots.add(new SaveSlot(slotId, slotName, x, y, rota));
         }
 
         salvarLista(context, slots);

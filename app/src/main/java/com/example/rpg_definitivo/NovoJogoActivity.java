@@ -27,6 +27,7 @@ public class NovoJogoActivity extends Activity {
     // Ação e Pause:
     private View btnAction;
     private View btnPause;
+    private View viewTransition;
     private View pauseMenuContainer;
     private TextView tvContinuar, tvSalvar, tvSairJogo;
 
@@ -42,6 +43,7 @@ public class NovoJogoActivity extends Activity {
     public boolean lojaAberta = false;
     public boolean inventarioAberto = false;
     public boolean isTransitioning = false;
+    private int rotaAtual = 1;
 
     // =========================================================================
     // FIELDS — Game Loop (Substituto do AnimationTimer do JavaFX)
@@ -89,7 +91,8 @@ public class NovoJogoActivity extends Activity {
         SaveSystem.SaveSlot slot = SaveSystem.carregarSlot(this, slotId);
         if (slot != null) {
             currentSlotName = slot.name;
-            // Usamos post para garantir que a UI já foi desenhada
+            rotaAtual = slot.rota; // Carrega a rota
+
             playerView.post(() -> {
                 playerView.setX(slot.playerX);
                 playerView.setY(slot.playerY);
@@ -108,6 +111,7 @@ public class NovoJogoActivity extends Activity {
         btnRight = findViewById(R.id.btn_right);
         btnAction = findViewById(R.id.btn_action);
         btnPause = findViewById(R.id.btn_pause);
+        viewTransition = findViewById(R.id.view_transition);
 
         pauseMenuContainer = findViewById(R.id.pause_menu_container);
         tvContinuar = findViewById(R.id.tv_continuar);
@@ -137,29 +141,35 @@ public class NovoJogoActivity extends Activity {
     }
 
     private void showSaveDialog() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Salvar Jogo");
-
-        final android.widget.EditText input = new android.widget.EditText(this);
-        input.setText(currentSlotName);
-        builder.setView(input);
-
-        builder.setPositiveButton("Salvar", (dialog, which) -> {
-            String name = input.getText().toString();
-            if (name.isEmpty()) name = "Sem Nome";
-            
-            if (currentSlotId == null) {
-                currentSlotId = String.valueOf(System.currentTimeMillis());
-            }
-            currentSlotName = name;
-            
-            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY());
+        if (currentSlotId != null) {
+            // Se já existe um slot, salva direto por cima sem perguntar nome
+            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual);
             Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
             togglePause();
-        });
-        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
+        } else {
+            // Se é a primeira vez salvando, pede o nome
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+            builder.setTitle("Salvar Jogo");
 
-        builder.show();
+            final android.widget.EditText input = new android.widget.EditText(this);
+            input.setText(currentSlotName);
+            builder.setView(input);
+
+            builder.setPositiveButton("Salvar", (dialog, which) -> {
+                String name = input.getText().toString();
+                if (name.isEmpty()) name = "Sem Nome";
+
+                currentSlotId = String.valueOf(System.currentTimeMillis());
+                currentSlotName = name;
+
+                SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual);
+                Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
+                togglePause();
+            });
+            builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
+
+            builder.show();
+        }
     }
 
     /**
@@ -247,9 +257,9 @@ public class NovoJogoActivity extends Activity {
             
             if (larguraTela > 0 && alturaTela > 0) {
                 // 1. Limites Laterais (Para não entrar no mato)
-                // Ajuste os valores decimais (0.15 e 0.85) conforme o desenho da sua estrada
-                float limiteEsquerdo = larguraTela * 0.15f; 
-                float limiteDireito = larguraTela * 0.85f - playerView.getWidth();
+                // Aumentei os limites de 0.15/0.85 para 0.25/0.75 para fechar mais o caminho
+                float limiteEsquerdo = larguraTela * 0.25f; 
+                float limiteDireito = larguraTela * 0.75f - playerView.getWidth();
 
                 // 2. Limite Superior (SISTEMA DE PRÓXIMO MAPA)
                 float limiteSuperior = 150; // Quando encostar perto do menu
@@ -258,11 +268,16 @@ public class NovoJogoActivity extends Activity {
                     return;
                 }
 
-                // 3. Limite Inferior (Não sair da tela)
+                // 3. Limite Inferior (Não sair da tela / Voltar mapa)
                 float limiteInferior = alturaTela - playerView.getHeight() - 20;
-                if (novaY > limiteInferior) novaY = limiteInferior;
+                if (novaY > limiteInferior) {
+                    voltarMapa();
+                    return;
+                }
 
-                // --- EFEITO DE MOVIMENTO NO MAPA (CÂMERA) ---
+                // Aplicar as travas laterais (Mato)
+                if (novaX < limiteEsquerdo) novaX = limiteEsquerdo;
+                if (novaX > limiteDireito) novaX = limiteDireito;
                 // O mapa se move levemente na direção oposta ao jogador
                 float scrollX = (larguraTela / 2f - novaX) * 0.1f;
                 float scrollY = (alturaTela / 2f - novaY) * 0.1f;
@@ -284,26 +299,47 @@ public class NovoJogoActivity extends Activity {
         }
     }
 
-    /**
-     * Lógica para "pular" de mapa.
-     * Reseta a posição do jogador para baixo e pode trocar a imagem do mapa.
-     */
     private void mudarDeMapa() {
+        if (isTransitioning) return;
         isTransitioning = true;
-        
-        // Pequeno atraso para dar efeito de transição
-        new Handler().postDelayed(() -> {
+        rotaAtual++;
+
+        viewTransition.setVisibility(View.VISIBLE);
+        viewTransition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
             int alturaTela = mainLayout.getHeight();
+            playerView.setY(alturaTela - playerView.getHeight() - 150);
             
-            // Coloca o personagem lá embaixo de novo
-            playerView.setY(alturaTela - playerView.getHeight() - 50);
+            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+
+            viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+                viewTransition.setVisibility(View.GONE);
+                isTransitioning = false;
+            }).start();
+        }).start();
+    }
+
+    private void voltarMapa() {
+        if (isTransitioning) return;
+        if (rotaAtual <= 1) {
+            float alturaTela = mainLayout.getHeight();
+            playerView.setY(alturaTela - playerView.getHeight() - 20);
+            return;
+        }
+
+        isTransitioning = true;
+        rotaAtual--;
+
+        viewTransition.setVisibility(View.VISIBLE);
+        viewTransition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
+            playerView.setY(250);
             
-            // Opcional: Trocar o fundo aqui se quiser
-            // mapView.setImageResource(R.drawable.fundo_novo);
-            
-            isTransitioning = false;
-            Toast.makeText(this, "Novo Mapa!", Toast.LENGTH_SHORT).show();
-        }, 300);
+            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+
+            viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+                viewTransition.setVisibility(View.GONE);
+                isTransitioning = false;
+            }).start();
+        }).start();
     }
 
     // =========================================================================
