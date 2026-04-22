@@ -25,7 +25,7 @@ public class NovoJogoActivity extends Activity {
     private Button btnUp, btnDown, btnLeft, btnRight;
 
     // Ação e Pause:
-    private ImageButton btnAction;
+    private View btnAction;
     private View btnPause;
     private View pauseMenuContainer;
     private TextView tvContinuar, tvSalvar, tvSairJogo;
@@ -212,38 +212,98 @@ public class NovoJogoActivity extends Activity {
     }
 
     /**
-     * Equivalente ao conteúdo do seu playerMovement.start() e enemyAI.start()
+     * Atualiza a lógica de movimento, colisões e câmera.
      */
     private void atualizarJogo() {
-        int velocidade = 5;
+        int velocidade = 7; // Aumentei um pouco para ficar mais fluido
         boolean movendo = false;
 
+        float novaX = playerView.getX();
+        float novaY = playerView.getY();
+
         if (keyUp) {
-            playerView.setY(playerView.getY() - velocidade);
+            novaY -= velocidade;
             playerView.setDirection(3); // Cima
             movendo = true;
         } else if (keyDown) {
-            playerView.setY(playerView.getY() + velocidade);
+            novaY += velocidade;
             playerView.setDirection(0); // Baixo
             movendo = true;
         } else if (keyLeft) {
-            playerView.setX(playerView.getX() - velocidade);
+            novaX -= velocidade;
             playerView.setDirection(1); // Esquerda
             movendo = true;
         } else if (keyRight) {
-            playerView.setX(playerView.getX() + velocidade);
+            novaX += velocidade;
             playerView.setDirection(2); // Direita
             movendo = true;
         }
 
         if (movendo) {
-            // Controle de velocidade da animação (muda frame a cada X iterações)
+            // --- SISTEMA DE COLISÃO (BARREIRAS INVISÍVEIS) ---
+            
+            int larguraTela = mainLayout.getWidth();
+            int alturaTela = mainLayout.getHeight();
+            
+            if (larguraTela > 0 && alturaTela > 0) {
+                // 1. Limites Laterais (Para não entrar no mato)
+                // Ajuste os valores decimais (0.15 e 0.85) conforme o desenho da sua estrada
+                float limiteEsquerdo = larguraTela * 0.15f; 
+                float limiteDireito = larguraTela * 0.85f - playerView.getWidth();
+
+                // 2. Limite Superior (SISTEMA DE PRÓXIMO MAPA)
+                float limiteSuperior = 150; // Quando encostar perto do menu
+                if (novaY < limiteSuperior) {
+                    mudarDeMapa();
+                    return;
+                }
+
+                // 3. Limite Inferior (Não sair da tela)
+                float limiteInferior = alturaTela - playerView.getHeight() - 20;
+                if (novaY > limiteInferior) novaY = limiteInferior;
+
+                // --- EFEITO DE MOVIMENTO NO MAPA (CÂMERA) ---
+                // O mapa se move levemente na direção oposta ao jogador
+                float scrollX = (larguraTela / 2f - novaX) * 0.1f;
+                float scrollY = (alturaTela / 2f - novaY) * 0.1f;
+                
+                mapView.setTranslationX(scrollX);
+                mapView.setTranslationY(scrollY);
+
+                // Aplica a posição final ao personagem
+                playerView.setX(novaX);
+                playerView.setY(novaY);
+            }
+
+            // Controle de animação
             if (System.currentTimeMillis() % 150 < 20) {
                 playerView.nextFrame();
             }
         } else {
             playerView.resetFrame();
         }
+    }
+
+    /**
+     * Lógica para "pular" de mapa.
+     * Reseta a posição do jogador para baixo e pode trocar a imagem do mapa.
+     */
+    private void mudarDeMapa() {
+        isTransitioning = true;
+        
+        // Pequeno atraso para dar efeito de transição
+        new Handler().postDelayed(() -> {
+            int alturaTela = mainLayout.getHeight();
+            
+            // Coloca o personagem lá embaixo de novo
+            playerView.setY(alturaTela - playerView.getHeight() - 50);
+            
+            // Opcional: Trocar o fundo aqui se quiser
+            // mapView.setImageResource(R.drawable.fundo_novo);
+            
+            isTransitioning = false;
+            Toast.makeText(this, "Novo Mapa!", Toast.LENGTH_SHORT).show();
+        }, 300);
     }
 
     // =========================================================================
