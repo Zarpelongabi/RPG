@@ -12,8 +12,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.rpg_definitivo.backend.managers.EnemyManager;
-
 public class NovoJogoActivity extends Activity {
 
     // =========================================================================
@@ -29,7 +27,6 @@ public class NovoJogoActivity extends Activity {
     // Ação e Pause:
     private View btnAction;
     private View btnPause;
-    private View viewTransition;
     private View pauseMenuContainer;
     private TextView tvContinuar, tvSalvar, tvSairJogo;
 
@@ -45,11 +42,6 @@ public class NovoJogoActivity extends Activity {
     public boolean lojaAberta = false;
     public boolean inventarioAberto = false;
     public boolean isTransitioning = false;
-    private int rotaAtual = 1;
-    private EnemyManager enemyManager;
-    private int enemyFrame = 0;
-    private long lastEnemyFrameTime = 0;
-    private boolean[][] defeatedEnemies = new boolean[10][10]; // Exemplo de tamanho
 
     // =========================================================================
     // FIELDS — Game Loop (Substituto do AnimationTimer do JavaFX)
@@ -83,13 +75,7 @@ public class NovoJogoActivity extends Activity {
         // 2. Configura os controles de toque (D-Pad)
         configurarControles();
 
-        // 3. Inicia o Gerenciador de Inimigos
-        mainLayout.post(() -> {
-            enemyManager = new EnemyManager(this, mainLayout, mainLayout.getWidth(), mainLayout.getHeight(), defeatedEnemies);
-            enemyManager.configureForMap(rotaAtual - 1);
-        });
-
-        // 4. Inicia o Loop do Jogo
+        // 3. Inicia o Loop do Jogo
         startGameLoop();
 
         // 4. Se veio para carregar save:
@@ -103,8 +89,7 @@ public class NovoJogoActivity extends Activity {
         SaveSystem.SaveSlot slot = SaveSystem.carregarSlot(this, slotId);
         if (slot != null) {
             currentSlotName = slot.name;
-            rotaAtual = slot.rota; // Carrega a rota
-
+            // Usamos post para garantir que a UI já foi desenhada
             playerView.post(() -> {
                 playerView.setX(slot.playerX);
                 playerView.setY(slot.playerY);
@@ -123,7 +108,6 @@ public class NovoJogoActivity extends Activity {
         btnRight = findViewById(R.id.btn_right);
         btnAction = findViewById(R.id.btn_action);
         btnPause = findViewById(R.id.btn_pause);
-        viewTransition = findViewById(R.id.view_transition);
 
         pauseMenuContainer = findViewById(R.id.pause_menu_container);
         tvContinuar = findViewById(R.id.tv_continuar);
@@ -153,35 +137,29 @@ public class NovoJogoActivity extends Activity {
     }
 
     private void showSaveDialog() {
-        if (currentSlotId != null) {
-            // Se já existe um slot, salva direto por cima sem perguntar nome
-            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual);
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Salvar Jogo");
+
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setText(currentSlotName);
+        builder.setView(input);
+
+        builder.setPositiveButton("Salvar", (dialog, which) -> {
+            String name = input.getText().toString();
+            if (name.isEmpty()) name = "Sem Nome";
+            
+            if (currentSlotId == null) {
+                currentSlotId = String.valueOf(System.currentTimeMillis());
+            }
+            currentSlotName = name;
+            
+            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY());
             Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
             togglePause();
-        } else {
-            // Se é a primeira vez salvando, pede o nome
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-            builder.setTitle("Salvar Jogo");
+        });
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
 
-            final android.widget.EditText input = new android.widget.EditText(this);
-            input.setText(currentSlotName);
-            builder.setView(input);
-
-            builder.setPositiveButton("Salvar", (dialog, which) -> {
-                String name = input.getText().toString();
-                if (name.isEmpty()) name = "Sem Nome";
-
-                currentSlotId = String.valueOf(System.currentTimeMillis());
-                currentSlotName = name;
-
-                SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual);
-                Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
-                togglePause();
-            });
-            builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
-
-            builder.show();
-        }
+        builder.show();
     }
 
     /**
@@ -269,9 +247,9 @@ public class NovoJogoActivity extends Activity {
             
             if (larguraTela > 0 && alturaTela > 0) {
                 // 1. Limites Laterais (Para não entrar no mato)
-                // Aumentei os limites de 0.15/0.85 para 0.25/0.75 para fechar mais o caminho
-                float limiteEsquerdo = larguraTela * 0.25f; 
-                float limiteDireito = larguraTela * 0.75f - playerView.getWidth();
+                // Ajuste os valores decimais (0.15 e 0.85) conforme o desenho da sua estrada
+                float limiteEsquerdo = larguraTela * 0.15f; 
+                float limiteDireito = larguraTela * 0.85f - playerView.getWidth();
 
                 // 2. Limite Superior (SISTEMA DE PRÓXIMO MAPA)
                 float limiteSuperior = 150; // Quando encostar perto do menu
@@ -280,102 +258,52 @@ public class NovoJogoActivity extends Activity {
                     return;
                 }
 
-                // 3. Limite Inferior (Não sair da tela / Voltar mapa)
+                // 3. Limite Inferior (Não sair da tela)
                 float limiteInferior = alturaTela - playerView.getHeight() - 20;
-                if (novaY > limiteInferior) {
-                    voltarMapa();
-                    return;
-                }
+                if (novaY > limiteInferior) novaY = limiteInferior;
 
-                // Aplicar as travas laterais (Mato)
-                if (novaX < limiteEsquerdo) novaX = limiteEsquerdo;
-                if (novaX > limiteDireito) novaX = limiteDireito;
-
-                // Aplica a posição final ao personagem
-                playerView.setX(novaX);
-                playerView.setY(novaY);
-
+                // --- EFEITO DE MOVIMENTO NO MAPA (CÂMERA) ---
                 // O mapa se move levemente na direção oposta ao jogador
                 float scrollX = (larguraTela / 2f - novaX) * 0.1f;
                 float scrollY = (alturaTela / 2f - novaY) * 0.1f;
                 
                 mapView.setTranslationX(scrollX);
                 mapView.setTranslationY(scrollY);
+
+                // Aplica a posição final ao personagem
+                playerView.setX(novaX);
+                playerView.setY(novaY);
             }
 
-            // Controle de animação do jogador
+            // Controle de animação
             if (System.currentTimeMillis() % 150 < 20) {
                 playerView.nextFrame();
             }
         } else {
             playerView.resetFrame();
         }
-
-        // --- ATUALIZAR INIMIGOS (Sempre, mesmo se o jogador estiver parado) ---
-        if (enemyManager != null) {
-            // Atualiza frame da animação do inimigo a cada 150ms
-            if (System.currentTimeMillis() - lastEnemyFrameTime > 150) {
-                enemyFrame = (enemyFrame + 1) % 4;
-                lastEnemyFrameTime = System.currentTimeMillis();
-            }
-
-            int collisionIndex = enemyManager.update(playerView.getX(), playerView.getY(), enemyFrame);
-            if (collisionIndex != -1) {
-                // Colidiu com inimigo!
-                // Toast.makeText(this, "Dano!", Toast.LENGTH_SHORT).show();
-            }
-        }
     }
 
+    /**
+     * Lógica para "pular" de mapa.
+     * Reseta a posição do jogador para baixo e pode trocar a imagem do mapa.
+     */
     private void mudarDeMapa() {
-        if (isTransitioning) return;
         isTransitioning = true;
-        rotaAtual++;
-
-        viewTransition.setVisibility(View.VISIBLE);
-        viewTransition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
+        
+        // Pequeno atraso para dar efeito de transição
+        new Handler().postDelayed(() -> {
             int alturaTela = mainLayout.getHeight();
-            playerView.setY(alturaTela - playerView.getHeight() - 150);
             
-            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
-
-            if (enemyManager != null) {
-                enemyManager.configureForMap(rotaAtual - 1);
-            }
-
-            viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
-                viewTransition.setVisibility(View.GONE);
-                isTransitioning = false;
-            }).start();
-        }).start();
-    }
-
-    private void voltarMapa() {
-        if (isTransitioning) return;
-        if (rotaAtual <= 1) {
-            float alturaTela = mainLayout.getHeight();
-            playerView.setY(alturaTela - playerView.getHeight() - 20);
-            return;
-        }
-
-        isTransitioning = true;
-        rotaAtual--;
-
-        viewTransition.setVisibility(View.VISIBLE);
-        viewTransition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
-            playerView.setY(250);
+            // Coloca o personagem lá embaixo de novo
+            playerView.setY(alturaTela - playerView.getHeight() - 50);
             
-            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
-
-            if (enemyManager != null) {
-                enemyManager.configureForMap(rotaAtual - 1);
-            }
-
-            viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
-                viewTransition.setVisibility(View.GONE);
-                isTransitioning = false;
-            }).start();
-        }).start();
+            // Opcional: Trocar o fundo aqui se quiser
+            // mapView.setImageResource(R.drawable.fundo_novo);
+            
+            isTransitioning = false;
+            Toast.makeText(this, "Novo Mapa!", Toast.LENGTH_SHORT).show();
+        }, 300);
     }
 
     // =========================================================================
