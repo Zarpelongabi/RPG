@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
+
     <!-- MAPA -->
     <ImageView
         android:id="@+id/map_view"
@@ -21,62 +22,84 @@
         android:layout_marginBottom="120dp" />
 
     <!-- INTERFACE -->
+
+    <!-- MENU PAUSE -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+        android:layout_height="match_parent">
 
-        <!-- HP -->
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="200dp"
+        <!-- GRUPO ESQUERDO: HUD (HP + MOEDAS) -->
+        <LinearLayout
+            android:id="@+id/layout_hud_left"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:layout_marginTop="10dp"
-            android:adjustViewBounds="true"
-            android:src="@drawable/barra_hp_completo" />
+            android:layout_marginStart="15dp"
+            android:layout_marginTop="15dp"
+            android:orientation="vertical">
 
-        <!-- MENU -->
-        <ImageView
-            android:id="@+id/iv_menu_visual"
-            android:layout_width="180dp"
+            <!-- BARRA HP/XP (Tamanho Padronizado) -->
+            <ImageView
+                android:id="@+id/imageView2"
+                android:layout_width="240dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/barra_hp_completo" />
+
+            <!-- CONTADOR DE MOEDAS (Mesmo tamanho da barra de HP para simetria) -->
+            <RelativeLayout
+                android:id="@+id/layout_moedas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-55dp">
+
+                <!-- Fundo escuro para os números -->
+
+                <!-- Ícone Moeda -->
+                <ImageView
+                    android:id="@+id/iv_moeda_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/moedas" />
+
+                <!-- Valor Moedas -->
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- MENU (Um pouco menor para um visual mais clean) -->
+        <RelativeLayout
+            android:id="@+id/layout_menu"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:src="@drawable/menu" />
-
-        <!-- CLIQUE DO MENU -->
-        <View
-            android:id="@+id/btn_pause"
-            android:layout_width="180dp"
-            android:layout_height="50dp"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:background="@android:color/transparent"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <!-- MOEDAS -->
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="10dp"
-            android:adjustViewBounds="true"
-            android:src="@drawable/moedas" />
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="15dp">
 
-        <!-- CONTROLES -->
+            <ImageView
+                android:id="@+id/iv_menu_visual"
+                android:layout_width="140dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/menu" />
+
+            <View
+                android:id="@+id/btn_pause"
+                android:layout_width="140dp"
+                android:layout_height="45dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true" />
+        </RelativeLayout>
+
+        <!-- CONTROLES D-PAD (Ficam no canto inferior esquerdo) -->
         <RelativeLayout
             android:id="@+id/relativeLayout"
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
             android:layout_marginStart="20dp"
@@ -84,8 +107,8 @@
 
             <Button
                 android:id="@+id/btn_up"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:alpha="0.7"
@@ -93,8 +116,8 @@
 
             <Button
                 android:id="@+id/btn_left"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:alpha="0.7"
@@ -102,8 +125,8 @@
 
             <Button
                 android:id="@+id/btn_right"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:alpha="0.7"
@@ -111,42 +134,29 @@
 
             <Button
                 android:id="@+id/btn_down"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:alpha="0.7"
                 android:text="▼" />
         </RelativeLayout>
 
-        <!-- BOTAO ACAO -->
-        <ImageView
-            android:id="@+id/iv_action_visual"
-            android:layout_width="180dp"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:adjustViewBounds="true"
-            android:clickable="false"
-            android:scaleType="fitCenter"
-            android:src="@drawable/acao" />
-
-        <!-- CLIQUE ACAO -->
+        <!-- BOTÃO AÇÃO / LUTAR -->
         <View
             android:id="@+id/btn_action"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginEnd="50dp"
-            android:layout_marginBottom="35dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
             android:background="@android:color/transparent"
             android:clickable="true"
             android:focusable="true" />
 
     </RelativeLayout>
 
-    <!-- MENU PAUSE -->
     <FrameLayout
         android:id="@+id/pause_menu_container"
         android:layout_width="match_parent"
@@ -173,7 +183,6 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:letterSpacing="0.1"
                 android:padding="15dp"
                 android:text="CONTINUAR"
                 android:textColor="#FFFFFF"
@@ -189,7 +198,6 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:letterSpacing="0.1"
                 android:padding="15dp"
                 android:text="SALVAR JOGO"
                 android:textColor="#FFFFFF"
@@ -204,7 +212,6 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:letterSpacing="0.1"
                 android:padding="15dp"
                 android:text="MENU PRINCIPAL"
                 android:textColor="#FFFFFF"

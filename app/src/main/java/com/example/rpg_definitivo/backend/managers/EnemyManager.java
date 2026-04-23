@@ -10,9 +10,14 @@ import java.util.List;
 // Importe seus modelos quando portá-los para o Android
 import com.example.rpg_definitivo.backend.models.BossGoblin;
 import com.example.rpg_definitivo.backend.models.Goblin;
-import com.example.rpg_definitivo.backend.models.BossGoblin;
 import com.example.rpg_definitivo.backend.models.GoblinExp;
 import com.example.rpg_definitivo.backend.models.Monsters;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Rect;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 
 public class EnemyManager {
 
@@ -77,17 +82,17 @@ public class EnemyManager {
     }
 
     private void spawnMap0Enemies() {
-        addEnemy(new Goblin(), 6, screenW * 0.3, screenH * 0.1, 128, 80);
-        addEnemy(new Goblin(), 1, screenW * 0.7, screenH * 0.2, 128, 80);
+        addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, 128, 80);
     }
 
     private void spawnMap1Enemies() {
-        addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.1, 128, 80);
-        addEnemy(new GoblinExp(), 1, screenW * 0.2, screenH * 0.15, 128, 80);
+        // Agora apenas 1 inimigo por rota, do tamanho do personagem (80dp)
+        addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, 128, 80);
     }
 
     private void spawnMap2Enemies() {
-        addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.1, 256, 256);
+        // Boss continua maior, ou você pode mudar para 80 se quiser padrão
+        addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, 256, 150);
     }
 
     private void addEnemy(Monsters monster, int uniqueId,
@@ -100,7 +105,7 @@ public class EnemyManager {
         ImageView enemyView = createEnemyImageView(monster, spriteSize, displaySize, x, y);
         if (enemyView == null) return;
 
-        storeEnemyProperties(enemyView, uniqueId, spriteSize, displaySize);
+        storeEnemyProperties(enemyView, uniqueId, spriteSize, displaySize, monster);
 
         monsters.add(monster);
         views.add(enemyView);
@@ -112,13 +117,6 @@ public class EnemyManager {
 
         ImageView view = new ImageView(context);
 
-        // No Android, em vez de passar um "caminho de String", usamos o ID do R.drawable
-        // ATENÇÃO: Aqui você precisará pegar a imagem baseada no seu R.drawable
-        // Exemplo fixo provisório (você adaptará para o getIdDaImagem do seu modelo):
-        // int imageResId = R.drawable.sprite_goblin;
-
-        // view.setImageResource(imageResId);
-
         // Configura dimensões e posição
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(displaySize, displaySize);
         view.setLayoutParams(params);
@@ -129,26 +127,28 @@ public class EnemyManager {
     }
 
     private void storeEnemyProperties(ImageView view, int uniqueId,
-                                      int spriteSize, int displaySize) {
-        // ImageView do Android não tem um getProperties() nativo genérico.
-        // A melhor forma de atrelar dados é usando setTag()
+                                      int spriteSize, int displaySize, Monsters monster) {
         EnemyData data = new EnemyData();
         data.mapId = uniqueId;
-        data.dirMove = 1.0;
         data.spriteSize = spriteSize;
         data.displaySize = displaySize;
-
-        // Opcional: guardar a Bitmap original aqui para não recarregar toda hora
+        
+        // Carrega a Spritesheet do monstro
+        Bitmap fullSheet = BitmapFactory.decodeResource(context.getResources(), monster.getImageResId());
+        data.spriteSheet = fullSheet;
 
         view.setTag(data);
     }
 
-    // Classe auxiliar para guardar as propriedades (substitui o view.getProperties() do JavaFX)
+    // Classe auxiliar para guardar as propriedades
     private static class EnemyData {
         int mapId;
-        double dirMove;
+        double dirX = 1.0;
+        double dirY = 0.0;
+        long lastAiChange = 0;
         int spriteSize;
         int displaySize;
+        Bitmap spriteSheet;
     }
 
     // =========================================================================
@@ -156,40 +156,63 @@ public class EnemyManager {
     // =========================================================================
 
     public int update(double playerX, double playerY, int enemyFrame) {
+        java.util.Random random = new java.util.Random();
+
         for (int i = 0; i < views.size(); i++) {
             ImageView view = views.get(i);
             EnemyData data = (EnemyData) view.getTag();
 
-            double dirMove = data.dirMove;
-            int spriteSize = data.spriteSize;
-            double displaySize = data.displaySize;
+            int displaySize = data.displaySize;
 
-            // ── Movimento horizontal ─────────────────────────────────────
-            double newX = view.getX() + dirMove;
+            // ── IA: Movimento Aleatório ──────────────────────────────────
+            if (System.currentTimeMillis() - data.lastAiChange > 2000) { // Muda a cada 2 segundos
+                int action = random.nextInt(5); // 0: Parado, 1: Esquerda, 2: Direita, 3: Cima, 4: Baixo
+                switch (action) {
+                    case 0: data.dirX = 0; data.dirY = 0; break;
+                    case 1: data.dirX = -1.5; data.dirY = 0; break;
+                    case 2: data.dirX = 1.5; data.dirY = 0; break;
+                    case 3: data.dirX = 0; data.dirY = -1.5; break;
+                    case 4: data.dirX = 0; data.dirY = 1.5; break;
+                }
+                data.lastAiChange = System.currentTimeMillis();
+            }
+
+            // ── Movimento ────────────────────────────────────────────────
+            double newX = view.getX() + data.dirX;
+            double newY = view.getY() + data.dirY;
+
+            // ── Colisão com Paredes Invisíveis (Igual ao Jogador) ────────
+            float limiteEsquerdo = (float) (screenW * 0.25f);
+            float limiteDireito = (float) (screenW * 0.75f - displaySize);
+            float limiteSuperior = 150;
+            float limiteInferior = (float) (screenH - displaySize - 20);
+
+            if (newX < limiteEsquerdo) { newX = limiteEsquerdo; data.dirX *= -1; }
+            if (newX > limiteDireito) { newX = limiteDireito; data.dirX *= -1; }
+            if (newY < limiteSuperior) { newY = limiteSuperior; data.dirY *= -1; }
+            if (newY > limiteInferior) { newY = limiteInferior; data.dirY *= -1; }
+
             view.setX((float) newX);
+            view.setY((float) newY);
 
-            // ── Bounce nas bordas da tela ───────────────────────────────
-            boolean changedDirection = false;
-            if (newX > screenW - displaySize - 50) {
-                dirMove = -1.0;
-                changedDirection = true;
-            } else if (newX < 50) {
-                dirMove = 1.0;
-                changedDirection = true;
+            // ── Animação: Recorte da Spritesheet ───────
+            if (data.spriteSheet != null) {
+                int directionRow = 0; // Baixo
+                if (data.dirY < 0) directionRow = 3;      // Cima
+                else if (data.dirX < 0) directionRow = 1; // Esquerda
+                else if (data.dirX > 0) directionRow = 2; // Direita
+                
+                int frameW = data.spriteSheet.getWidth() / 4;
+                int frameH = data.spriteSheet.getHeight() / 4;
+
+                int srcX = enemyFrame * frameW;
+                int srcY = directionRow * frameH;
+
+                Bitmap frameBitmap = Bitmap.createBitmap(data.spriteSheet, srcX, srcY, frameW, frameH);
+                view.setImageBitmap(frameBitmap);
             }
-            if (changedDirection) {
-                data.dirMove = dirMove;
-            }
 
-            // ── Animação: seleciona frame e direção na sprite sheet ───────
-            // No Android, para recortar uma Sprite Sheet, nós faríamos isso:
-            // int spriteRow = (dirMove > 0) ? 2 : 1;
-            // Bitmap original = ... (sua sprite sheet inteira)
-            // Bitmap frameRecortado = Bitmap.createBitmap(original, enemyFrame * spriteSize, spriteRow * spriteSize, spriteSize, spriteSize);
-            // view.setImageBitmap(frameRecortado);
-            // *NOTA: Recortar imagens 60x por segundo pesa no celular. O ideal será pré-recortar depois.
-
-            // ── Verificação de colisão (A MATEMÁTICA CONTINUA IGUAL!) ──
+            // ── Verificação de colisão ──
             double dx = (playerX + 32) - (newX + displaySize / 2);
             double dy = (playerY + 32) - (view.getY() + displaySize / 2);
             double distanceSquared = dx * dx + dy * dy;

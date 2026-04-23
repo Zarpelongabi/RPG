@@ -12,6 +12,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.rpg_definitivo.backend.managers.EnemyManager;
+
 public class NovoJogoActivity extends Activity {
 
     // =========================================================================
@@ -44,6 +46,10 @@ public class NovoJogoActivity extends Activity {
     public boolean inventarioAberto = false;
     public boolean isTransitioning = false;
     private int rotaAtual = 1;
+    private EnemyManager enemyManager;
+    private int enemyFrame = 0;
+    private long lastEnemyFrameTime = 0;
+    private boolean[][] defeatedEnemies = new boolean[10][10]; // Exemplo de tamanho
 
     // =========================================================================
     // FIELDS — Game Loop (Substituto do AnimationTimer do JavaFX)
@@ -77,7 +83,13 @@ public class NovoJogoActivity extends Activity {
         // 2. Configura os controles de toque (D-Pad)
         configurarControles();
 
-        // 3. Inicia o Loop do Jogo
+        // 3. Inicia o Gerenciador de Inimigos
+        mainLayout.post(() -> {
+            enemyManager = new EnemyManager(this, mainLayout, mainLayout.getWidth(), mainLayout.getHeight(), defeatedEnemies);
+            enemyManager.configureForMap(rotaAtual - 1);
+        });
+
+        // 4. Inicia o Loop do Jogo
         startGameLoop();
 
         // 4. Se veio para carregar save:
@@ -278,24 +290,40 @@ public class NovoJogoActivity extends Activity {
                 // Aplicar as travas laterais (Mato)
                 if (novaX < limiteEsquerdo) novaX = limiteEsquerdo;
                 if (novaX > limiteDireito) novaX = limiteDireito;
+
+                // Aplica a posição final ao personagem
+                playerView.setX(novaX);
+                playerView.setY(novaY);
+
                 // O mapa se move levemente na direção oposta ao jogador
                 float scrollX = (larguraTela / 2f - novaX) * 0.1f;
                 float scrollY = (alturaTela / 2f - novaY) * 0.1f;
                 
                 mapView.setTranslationX(scrollX);
                 mapView.setTranslationY(scrollY);
-
-                // Aplica a posição final ao personagem
-                playerView.setX(novaX);
-                playerView.setY(novaY);
             }
 
-            // Controle de animação
+            // Controle de animação do jogador
             if (System.currentTimeMillis() % 150 < 20) {
                 playerView.nextFrame();
             }
         } else {
             playerView.resetFrame();
+        }
+
+        // --- ATUALIZAR INIMIGOS (Sempre, mesmo se o jogador estiver parado) ---
+        if (enemyManager != null) {
+            // Atualiza frame da animação do inimigo a cada 150ms
+            if (System.currentTimeMillis() - lastEnemyFrameTime > 150) {
+                enemyFrame = (enemyFrame + 1) % 4;
+                lastEnemyFrameTime = System.currentTimeMillis();
+            }
+
+            int collisionIndex = enemyManager.update(playerView.getX(), playerView.getY(), enemyFrame);
+            if (collisionIndex != -1) {
+                // Colidiu com inimigo!
+                // Toast.makeText(this, "Dano!", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -310,6 +338,10 @@ public class NovoJogoActivity extends Activity {
             playerView.setY(alturaTela - playerView.getHeight() - 150);
             
             Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+
+            if (enemyManager != null) {
+                enemyManager.configureForMap(rotaAtual - 1);
+            }
 
             viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
                 viewTransition.setVisibility(View.GONE);
@@ -334,6 +366,10 @@ public class NovoJogoActivity extends Activity {
             playerView.setY(250);
             
             Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+
+            if (enemyManager != null) {
+                enemyManager.configureForMap(rotaAtual - 1);
+            }
 
             viewTransition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
                 viewTransition.setVisibility(View.GONE);
