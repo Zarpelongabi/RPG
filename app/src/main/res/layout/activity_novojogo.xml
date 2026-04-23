@@ -57,6 +57,9 @@
                 <!-- Fundo escuro para os números -->
 
                 <!-- Ícone Moeda -->
+
+
+
                 <ImageView
                     android:id="@+id/iv_moeda_icon"
                     android:layout_width="match_parent"
