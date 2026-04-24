@@ -10,7 +10,8 @@ import java.util.List;
 // Importe seus modelos quando portá-los para o Android
 import com.example.rpg_definitivo.backend.models.BossGoblin;
 import com.example.rpg_definitivo.backend.models.Goblin;
-import com.example.rpg_definitivo.backend.models.GoblinExp;
+import com.example.rpg_definitivo
+        .backend.models.GoblinExp;
 import com.example.rpg_definitivo.backend.models.Monsters;
 
 import android.graphics.Bitmap;
@@ -181,10 +182,10 @@ public class EnemyManager {
             double newX = view.getX() + data.dirX;
             double newY = view.getY() + data.dirY;
 
-            // ── Colisão com Paredes Invisíveis (Igual ao Jogador) ────────
-            float limiteEsquerdo = (float) (screenW * 0.25f);
-            float limiteDireito = (float) (screenW * 0.75f - displaySize);
-            float limiteSuperior = 150;
+            // ── Colisão com Paredes Invisíveis (Igual ao Jogador - Ajustado para o Caminho) ────────
+            float limiteEsquerdo = (float) (screenW * 0.20f);
+            float limiteDireito = (float) (screenW * 0.80f - displaySize);
+            float limiteSuperior = 0;
             float limiteInferior = (float) (screenH - displaySize - 20);
 
             if (newX < limiteEsquerdo) { newX = limiteEsquerdo; data.dirX *= -1; }
@@ -213,10 +214,18 @@ public class EnemyManager {
             }
 
             // ── Verificação de colisão ──
-            double dx = (playerX + 32) - (newX + displaySize / 2);
-            double dy = (playerY + 32) - (view.getY() + displaySize / 2);
+            double playerCenterX = playerX + (displaySize / 2.0);
+            double playerCenterY = playerY + (displaySize / 2.0);
+            double enemyCenterX = newX + (displaySize / 2.0);
+            double enemyCenterY = newY + (displaySize / 2.0);
+
+            double dx = playerCenterX - enemyCenterX;
+            double dy = playerCenterY - enemyCenterY;
             double distanceSquared = dx * dx + dy * dy;
-            double collisionRadiusSquared = (displaySize * 0.4) * (displaySize * 0.4);
+            
+            // Raio de colisão (ajustado para ser mais sensível quando se "encostam")
+            double collisionDistance = displaySize * 0.7; 
+            double collisionRadiusSquared = collisionDistance * collisionDistance;
 
             if (distanceSquared < collisionRadiusSquared) {
                 return i;

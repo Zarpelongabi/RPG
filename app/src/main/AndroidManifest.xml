@@ -30,5 +30,10 @@
             android:exported="false"
             android:screenOrientation="sensorLandscape" />
 
+        <activity
+            android:name=".BattleActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape" />
+
     </application>
 </manifest>

@@ -5,13 +5,18 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- MAPA -->
     <ImageView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/fundo" />
+
+    <!-- CAMADA DE INIMIGOS (Abaixo do jogador) -->
+    <FrameLayout
+        android:id="@+id/enemy_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <!-- PERSONAGEM -->
     <com.example.rpg_definitivo.PlayerView
