@@ -348,7 +348,7 @@ public class NovoJogoActivity extends Activity {
         
         Intent intent = new Intent(this, BattleActivity.class);
         intent.putExtra("enemy_name", monstro.getName());
-        intent.putExtra("enemy_res", monstro.getImageResId());
+        intent.putExtra("enemy_res", monstro.getBattleImageResId());
         
         // Remove o inimigo do mapa (para não colidir de novo ao voltar)
         enemyManager.removeEnemy(enemyIndex);

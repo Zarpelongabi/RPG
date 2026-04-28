@@ -16,6 +16,6 @@ public class GoblinExp extends Monsters {
 
         // Aqui está a mágica do Android! Usamos o R.drawable.nome_do_arquivo (sem o .png)
         this.imageResId       = R.drawable.sprite_goblinexperiente;
-        this.battleImageResId = R.drawable.sprite_goblin;
+        this.battleImageResId = R.drawable.sprite_batalhagoblinexperiente;
     }
 }

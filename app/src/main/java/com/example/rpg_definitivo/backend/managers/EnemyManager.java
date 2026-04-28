@@ -83,17 +83,20 @@ public class EnemyManager {
     }
 
     private void spawnMap0Enemies() {
-        addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, 128, 80);
+        int normalSize = (int) (60 * context.getResources().getDisplayMetrics().density);
+        addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, 128, normalSize);
     }
 
     private void spawnMap1Enemies() {
+        int normalSize = (int) (70 * context.getResources().getDisplayMetrics().density);
         // Agora apenas 1 inimigo por rota, do tamanho do personagem (80dp)
-        addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, 128, 80);
+        addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, 128, normalSize);
     }
 
     private void spawnMap2Enemies() {
-        // Boss continua maior, ou você pode mudar para 80 se quiser padrão
-        addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, 256, 150);
+        int normalSize = (int) (90 * context.getResources().getDisplayMetrics().density);
+        // Boss agora do mesmo tamanho que o personagem (80dp)
+        addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, 256, normalSize);
     }
 
     private void addEnemy(Monsters monster, int uniqueId,
@@ -182,16 +185,28 @@ public class EnemyManager {
             double newX = view.getX() + data.dirX;
             double newY = view.getY() + data.dirY;
 
-            // ── Colisão com Paredes Invisíveis (Igual ao Jogador - Ajustado para o Caminho) ────────
+            // ── Colisão com Barreiras Invisíveis (Goblins ficam presos no caminho) ────────
             float limiteEsquerdo = (float) (screenW * 0.20f);
             float limiteDireito = (float) (screenW * 0.80f - displaySize);
-            float limiteSuperior = 0;
-            float limiteInferior = (float) (screenH - displaySize - 20);
+            float limiteSuperior = (float) (screenH * 0.10f); // Não sobe até a borda de transição
+            float limiteInferior = (float) (screenH * 0.85f - displaySize); // Não desce até a borda de transição
 
-            if (newX < limiteEsquerdo) { newX = limiteEsquerdo; data.dirX *= -1; }
-            if (newX > limiteDireito) { newX = limiteDireito; data.dirX *= -1; }
-            if (newY < limiteSuperior) { newY = limiteSuperior; data.dirY *= -1; }
-            if (newY > limiteInferior) { newY = limiteInferior; data.dirY *= -1; }
+            if (newX < limiteEsquerdo) { 
+                newX = limiteEsquerdo; 
+                data.dirX = Math.abs(data.dirX); // Vai para a direita
+            }
+            if (newX > limiteDireito) { 
+                newX = limiteDireito; 
+                data.dirX = -Math.abs(data.dirX); // Vai para a esquerda
+            }
+            if (newY < limiteSuperior) { 
+                newY = limiteSuperior; 
+                data.dirY = Math.abs(data.dirY); // Vai para baixo
+            }
+            if (newY > limiteInferior) { 
+                newY = limiteInferior; 
+                data.dirY = -Math.abs(data.dirY); // Vai para cima
+            }
 
             view.setX((float) newX);
             view.setY((float) newY);

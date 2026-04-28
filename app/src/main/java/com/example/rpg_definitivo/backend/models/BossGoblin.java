@@ -18,6 +18,6 @@ public class BossGoblin extends Monsters {
         );
 
         this.imageResId       = R.drawable.sprite_baginga;
-        this.battleImageResId = R.drawable.sprite_goblin;
+        this.battleImageResId = R.drawable.sprite_batalhabaginga;
     }
 }

@@ -18,6 +18,6 @@ public class Goblin extends Monsters {
         // No Android, referenciamos imagens por IDs numéricos.
         // Zero (0) é usado temporariamente até colocarmos as imagens na pasta res/drawable.
         this.imageResId       = R.drawable.sprite_goblin;
-        this.battleImageResId = R.drawable.sprite_goblin;
+        this.battleImageResId = R.drawable.sprite_batalhagoblin;
     }
 }
