@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Fundo da Barra (O que aparece quando você perde vida: PRETO) -->
+    <!-- Fundo da Barra (TRANSPARENTE para mostrar a imagem de vida que está atrás) -->
     <item android:id="@android:id/background">
         <shape>
-            <corners android:radius="2dp" />
-            <color android:color="#FF000000" />
+            <color android:color="@android:color/transparent" />
         </shape>
     </item>
-    <!-- Progresso da Barra (O que representa sua vida atual: TRANSPARENTE) -->
+
+    <!-- Progresso da Barra (PRETO para "esconder" a vida, vindo da DIREITA) -->
     <item android:id="@android:id/progress">
-        <clip>
+        <clip android:gravity="right">
             <shape>
                 <corners android:radius="2dp" />
-                <color android:color="@android:color/transparent" />
+                <color android:color="#FF000000" />
             </shape>
         </clip>
     </item>

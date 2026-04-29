@@ -1,5 +1,6 @@
 package com.example.rpg_definitivo;
 
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,7 +13,7 @@ import android.widget.TextView;
 
 public class BattleActivity extends Activity {
 
-    private ImageView ivEnemy, ivPlayer;
+    private ImageView ivEnemy, ivPlayer, ivPlayerPortrait;
     private TextView tvEnemyName, tvPlayerName, tvPlayerLevel, tvMessage, tvPlayerHpValues, tvPlayerXpValues;
     private ProgressBar pbEnemyHp, pbPlayerHp, pbPlayerXp;
     private Button btnAttack, btnSkill, btnItem, btnRun;
@@ -50,6 +51,7 @@ public class BattleActivity extends Activity {
         // Vínculos com o XML
         ivEnemy = findViewById(R.id.iv_enemy_battle);
         ivPlayer = findViewById(R.id.iv_player_battle);
+        ivPlayerPortrait = findViewById(R.id.iv_player_portrait);
         tvEnemyName = findViewById(R.id.tv_enemy_name);
         tvPlayerName = findViewById(R.id.tv_player_name);
         tvPlayerLevel = findViewById(R.id.tv_player_level);
@@ -93,13 +95,20 @@ public class BattleActivity extends Activity {
         tvPlayerHpValues.setText(playerHp + "/" + playerMaxHp);
         tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
         
-        // No HP "Sombra", progress=100 significa 0 sombra (vida cheia mostra o vermelho original)
+        // No HP "Sombra", progress=0 significa 0 sombra (vida cheia mostra a cor da imagem)
         pbPlayerHp.setMax(playerMaxHp);
-        pbPlayerHp.setProgress(playerHp);
+        pbPlayerHp.setProgress(playerMaxHp - playerHp);
         
-        // No XP "Sombra", progress=0 significa sombra total (barra de XP começa vazia/escura)
+        // No XP "Sombra", progress=MAX significa sombra total (barra de XP começa vazia/escura)
         pbPlayerXp.setMax(xpToNextLevel);
-        pbPlayerXp.setProgress(playerXp);
+        pbPlayerXp.setProgress(xpToNextLevel - playerXp);
+
+        // Recorta o rosto do personagem para o HUD usando a nova classe FaceCropper
+        Bitmap playerSheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_personagem);
+        Bitmap portrait = FaceCropper.getFace(playerSheet);
+        if (portrait != null) {
+            ivPlayerPortrait.setImageBitmap(portrait);
+        }
 
         tvMessage.setText("Um " + tvEnemyName.getText() + " selvagem apareceu!");
 
@@ -130,7 +139,7 @@ public class BattleActivity extends Activity {
             ivPlayer.animate().translationXBy(-80).translationYBy(40).setDuration(120).withEndAction(() -> {
                 int dano = 6 + (int)(Math.random() * 4);
                 enemyHp -= dano;
-                pbEnemyHp.setProgress(Math.max(0, enemyHp));
+                ObjectAnimator.ofInt(pbEnemyHp, "progress", Math.max(0, enemyHp)).setDuration(500).start();
                 tvMessage.setText("Você causou " + dano + " de dano!");
 
                 if (enemyHp <= 0) {
@@ -158,10 +167,10 @@ public class BattleActivity extends Activity {
                 tvPlayerLevel.setText("" + playerLevel);
                 tvMessage.setText("Subiu para o nível " + playerLevel + "!");
                 playerHp = playerMaxHp; 
-                pbPlayerHp.setProgress(playerHp);
+                ObjectAnimator.ofInt(pbPlayerHp, "progress", 0).setDuration(500).start();
                 tvPlayerHpValues.setText(playerHp + "/" + playerMaxHp);
             }
-            pbPlayerXp.setProgress(playerXp);
+            ObjectAnimator.ofInt(pbPlayerXp, "progress", xpToNextLevel - playerXp).setDuration(500).start();
             tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
             
             btnAttack.postDelayed(this::finish, 2000);
@@ -177,9 +186,9 @@ public class BattleActivity extends Activity {
                 int dano = enemyDamage + (int)(Math.random() * 3);
                 playerHp -= dano;
                 
-                // Atualiza o HP. Conforme playerHp diminui, a parte transparente encurta 
-                // e a parte preta (Background) cobre a barra vermelha da imagem original.
-                pbPlayerHp.setProgress(Math.max(0, playerHp));
+                // Atualiza o HP com animação da sombra (Max - Atual).
+                int sombraHp = playerMaxHp - Math.max(0, playerHp);
+                ObjectAnimator.ofInt(pbPlayerHp, "progress", sombraHp).setDuration(500).start();
                 tvPlayerHpValues.setText(Math.max(0, playerHp) + "/" + playerMaxHp);
 
                 tvMessage.setText("O inimigo atacou e causou " + dano + " de dano!");

@@ -50,7 +50,7 @@
                 android:layout_width="240dp"
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
-                android:src="@drawable/barra_hp_completo" />
+                android:src="@drawable/barra_hud" />
 
             <!-- CONTADOR DE MOEDAS (Mesmo tamanho da barra de HP para simetria) -->
             <RelativeLayout
