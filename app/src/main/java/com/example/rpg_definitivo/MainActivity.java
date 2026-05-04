@@ -57,10 +57,9 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (isMenuOpen) {
-                    Toast.makeText(MainActivity.this, "Abrindo Novo Jogo...", Toast.LENGTH_SHORT).show();
-                    Intent aba = new Intent(MainActivity.this, NovoJogoActivity.class);
+                    Toast.makeText(MainActivity.this, "Iniciando Jornada...", Toast.LENGTH_SHORT).show();
+                    Intent aba = new Intent(MainActivity.this, IntroActivity.class);
                     startActivity(aba);
-                    // Não damos finish() para poder voltar ao menu principal
                 }
             }
         });

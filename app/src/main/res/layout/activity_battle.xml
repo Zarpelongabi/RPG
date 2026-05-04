@@ -72,6 +72,9 @@
     </RelativeLayout>
 
     <!-- SPRITE DO INIMIGO -->
+
+    <!-- STATUS DO JOGADOR (Seu Quadro de Madeira) -->
+
     <ImageView
         android:id="@+id/iv_enemy_battle"
         android:layout_width="150dp"
@@ -80,7 +83,6 @@
         android:layout_marginTop="50dp"
         android:layout_marginEnd="50dp" />
 
-    <!-- STATUS DO JOGADOR (Seu Quadro de Madeira) -->
     <RelativeLayout
         android:layout_width="320dp"
         android:layout_height="120dp"
@@ -95,14 +97,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/barra_hud" />
 
-        <!-- RETRATO DO PERSONAGEM (Recortado do Sprite) -->
-        <ImageView
-            android:id="@+id/iv_player_portrait"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:layout_marginStart="14dp"
-            android:layout_marginTop="24dp"
-            android:scaleType="centerCrop" />
+        <!-- RETRATO DO PERSONAGEM (REMOVIDO) -->
 
         <!-- Nome do Herói (REMOVIDO PARA LIMPAR O HUD) -->
         <TextView
@@ -164,16 +159,18 @@
     </RelativeLayout>
 
     <!-- SPRITE DO JOGADOR -->
+
+    <!-- CAIXA DE MENSAGEM (Estilo Pokemon) -->
+
     <ImageView
         android:id="@+id/iv_player_battle"
         android:layout_width="230dp"
         android:layout_height="230dp"
         android:layout_gravity="bottom|start"
-        android:layout_marginBottom="85dp"
         android:layout_marginStart="15dp"
+        android:layout_marginBottom="85dp"
         android:src="@drawable/personagem_battle" />
 
-    <!-- CAIXA DE MENSAGEM (Estilo Pokemon) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="115dp"

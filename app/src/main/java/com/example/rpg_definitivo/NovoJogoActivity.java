@@ -32,6 +32,7 @@ public class NovoJogoActivity extends Activity {
     private View btnPause;
     private View pauseMenuContainer;
     private TextView tvContinuar, tvSalvar, tvSairJogo;
+    private TextView tvLevelUpToast;
 
     // =========================================================================
     // FIELDS — Estado das "Teclas" (D-Pad Virtual)
@@ -46,6 +47,14 @@ public class NovoJogoActivity extends Activity {
     public boolean inventarioAberto = false;
     public boolean isTransitioning = false;
     private int rotaAtual = 1;
+
+    // Status do Jogador (para persistência)
+    private int playerHp = 100;
+    private int playerMaxHp = 100;
+    private int playerLevel = 1;
+    private int playerXp = 0;
+    private int playerCoins = 0;
+
     private EnemyManager enemyManager;
     private int enemyFrame = 0;
     private long lastEnemyFrameTime = 0;
@@ -121,12 +130,28 @@ public class NovoJogoActivity extends Activity {
         if (slot != null) {
             currentSlotName = slot.name;
             rotaAtual = slot.rota;
+            playerHp = slot.hp;
+            playerMaxHp = slot.maxHp;
+            playerLevel = slot.level;
+            playerXp = slot.xp;
+            playerCoins = slot.coins;
+            if (slot.defeatedEnemies != null) {
+                defeatedEnemies = slot.defeatedEnemies;
+            }
+
             // Usamos post para garantir que a UI já foi desenhada
             playerView.post(() -> {
                 playerView.setX(slot.playerX);
                 playerView.setY(slot.playerY);
+                // Atualizar o HUD visual (pode ser necessário criar um método para isso)
+                updateHUD();
             });
         }
+    }
+
+    private void updateHUD() {
+        // Se tivéssemos referências para as barras no HUD do mapa, atualizaríamos aqui.
+        // Por enquanto, os valores estão salvos nas variáveis.
     }
 
     private void linkarInterface() {
@@ -145,6 +170,7 @@ public class NovoJogoActivity extends Activity {
         tvContinuar = findViewById(R.id.tv_continuar);
         tvSalvar = findViewById(R.id.tv_salvar);
         tvSairJogo = findViewById(R.id.tv_sair_jogo);
+        tvLevelUpToast = findViewById(R.id.tv_level_up_toast);
 
         // Ação do botão de Pause/Menu
         btnPause.setOnClickListener(v -> togglePause());
@@ -185,7 +211,8 @@ public class NovoJogoActivity extends Activity {
             }
             currentSlotName = name;
             
-            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual);
+            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual, 
+                                 playerHp, playerMaxHp, playerLevel, playerXp, playerCoins, defeatedEnemies);
             Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
             togglePause();
         });
@@ -337,12 +364,15 @@ public class NovoJogoActivity extends Activity {
         }
     }
 
+    private int lastEnemyIndex = -1;
+
     private void iniciarBatalha(int enemyIndex) {
         if (isPaused || isTransitioning) return;
         
         // Pausa o jogo antes de ir para a batalha
         isPaused = true;
         resetMovement();
+        lastEnemyIndex = enemyIndex;
 
         com.example.rpg_definitivo.backend.models.Monsters monstro = enemyManager.getMonstro(enemyIndex);
         
@@ -350,10 +380,76 @@ public class NovoJogoActivity extends Activity {
         intent.putExtra("enemy_name", monstro.getName());
         intent.putExtra("enemy_res", monstro.getBattleImageResId());
         
-        // Remove o inimigo do mapa (para não colidir de novo ao voltar)
-        enemyManager.removeEnemy(enemyIndex);
+        // Passar status atuais do jogador para a batalha
+        intent.putExtra("p_hp", playerHp);
+        intent.putExtra("p_max_hp", playerMaxHp);
+        intent.putExtra("p_level", playerLevel);
+        intent.putExtra("p_xp", playerXp);
+
+        startActivityForResult(intent, 100);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100) {
+            // Se a BattleActivity devolver os status atualizados:
+            if (data != null) {
+                playerHp = data.getIntExtra("p_hp", playerHp);
+                playerMaxHp = data.getIntExtra("p_max_hp", playerMaxHp);
+                playerLevel = data.getIntExtra("p_level", playerLevel);
+                playerXp = data.getIntExtra("p_xp", playerXp);
+                // Moedas podem ser adicionadas aqui também se BattleActivity as gerenciar
+            }
+
+            if (resultCode == RESULT_OK && lastEnemyIndex != -1) {
+                // Remove o inimigo apenas em caso de vitória
+                enemyManager.removeEnemy(lastEnemyIndex);
+                showLevelUpEffect();
+            } else {
+                // Se fugiu ou perdeu, o inimigo continua no mapa. 
+                // Teletransportamos o jogador um pouco para trás para evitar colisão imediata.
+                afastarJogador();
+                Toast.makeText(this, "A batalha terminou.", Toast.LENGTH_SHORT).show();
+            }
+            lastEnemyIndex = -1;
+            isPaused = false;
+        }
+    }
+
+    private void showLevelUpEffect() {
+        if (tvLevelUpToast == null) return;
         
-        startActivity(intent);
+        tvLevelUpToast.setVisibility(View.VISIBLE);
+        tvLevelUpToast.setAlpha(0f);
+        tvLevelUpToast.setScaleX(0.5f);
+        tvLevelUpToast.setScaleY(0.5f);
+
+        tvLevelUpToast.animate()
+                .alpha(1f)
+                .scaleX(1.2f)
+                .scaleY(1.2f)
+                .setDuration(500)
+                .withEndAction(() -> {
+                    tvLevelUpToast.animate()
+                            .alpha(0f)
+                            .setStartDelay(1000)
+                            .setDuration(500)
+                            .withEndAction(() -> tvLevelUpToast.setVisibility(View.GONE))
+                            .start();
+                })
+                .start();
+    }
+
+    private void afastarJogador() {
+        if (keyUp) playerView.setY(playerView.getY() + 40);
+        else if (keyDown) playerView.setY(playerView.getY() - 40);
+        else if (keyLeft) playerView.setX(playerView.getX() + 40);
+        else if (keyRight) playerView.setX(playerView.getX() - 40);
+        else {
+            // Se não estava se movendo (colisão por movimento do inimigo), afasta para baixo por padrão
+            playerView.setY(playerView.getY() + 40);
+        }
     }
 
     /**

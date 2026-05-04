@@ -44,26 +44,41 @@
             android:layout_marginTop="15dp"
             android:orientation="vertical">
 
-            <!-- BARRA HP/XP (Tamanho Padronizado) -->
-            <ImageView
-                android:id="@+id/imageView2"
-                android:layout_width="240dp"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:src="@drawable/barra_hud" />
+            <!-- BARRA HP/XP (Maior e Imponente) -->
+            <RelativeLayout
+                android:layout_width="280dp"
+                android:layout_height="wrap_content">
 
-            <!-- CONTADOR DE MOEDAS (Mesmo tamanho da barra de HP para simetria) -->
+                <ImageView
+                    android:id="@+id/imageView2"
+                    android:layout_width="280dp"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/barra_hud" />
+
+                <TextView
+                    android:id="@+id/tv_level_up_toast"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="LEVEL UP!"
+                    android:textColor="#FFD700"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:shadowColor="#000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="4" />
+            </RelativeLayout>
+
+            <!-- CONTADOR DE MOEDAS (Menor e Simétrico) -->
             <RelativeLayout
                 android:id="@+id/layout_moedas"
-                android:layout_width="match_parent"
+                android:layout_width="160dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-55dp">
-
-                <!-- Fundo escuro para os números -->
-
-                <!-- Ícone Moeda -->
-
-
+                android:layout_marginTop="-40dp"
+                android:layout_gravity="start">
 
                 <ImageView
                     android:id="@+id/iv_moeda_icon"
@@ -71,8 +86,6 @@
                     android:layout_height="wrap_content"
                     android:adjustViewBounds="true"
                     android:src="@drawable/moedas" />
-
-                <!-- Valor Moedas -->
             </RelativeLayout>
         </LinearLayout>
 

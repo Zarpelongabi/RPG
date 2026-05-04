@@ -18,14 +18,26 @@ public class SaveSystem {
         public String name;
         public float playerX;
         public float playerY;
-        public int rota; // Adicionado: Rota atual
+        public int rota;
+        public int hp;
+        public int maxHp;
+        public int level;
+        public int xp;
+        public int coins;
+        public boolean[][] defeatedEnemies;
 
-        public SaveSlot(String id, String name, float playerX, float playerY, int rota) {
+        public SaveSlot(String id, String name, float playerX, float playerY, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
             this.id = id;
             this.name = name;
             this.playerX = playerX;
             this.playerY = playerY;
             this.rota = rota;
+            this.hp = hp;
+            this.maxHp = maxHp;
+            this.level = level;
+            this.xp = xp;
+            this.coins = coins;
+            this.defeatedEnemies = defeatedEnemies;
         }
 
         public JSONObject toInterface() throws JSONException {
@@ -35,34 +47,71 @@ public class SaveSystem {
             json.put("playerX", playerX);
             json.put("playerY", playerY);
             json.put("rota", rota);
+            json.put("hp", hp);
+            json.put("maxHp", maxHp);
+            json.put("level", level);
+            json.put("xp", xp);
+            json.put("coins", coins);
+            
+            JSONArray defeatedArray = new JSONArray();
+            if (defeatedEnemies != null) {
+                for (boolean[] row : defeatedEnemies) {
+                    JSONArray rowArray = new JSONArray();
+                    for (boolean val : row) {
+                        rowArray.put(val);
+                    }
+                    defeatedArray.put(rowArray);
+                }
+            }
+            json.put("defeatedEnemies", defeatedArray);
+            
             return json;
         }
 
         public static SaveSlot fromJSON(JSONObject json) throws JSONException {
+            boolean[][] defeated = new boolean[10][10];
+            if (json.has("defeatedEnemies")) {
+                JSONArray defeatedArray = json.getJSONArray("defeatedEnemies");
+                for (int i = 0; i < Math.min(defeatedArray.length(), 10); i++) {
+                    JSONArray rowArray = defeatedArray.getJSONArray(i);
+                    for (int j = 0; j < Math.min(rowArray.length(), 10); j++) {
+                        defeated[i][j] = rowArray.getBoolean(j);
+                    }
+                }
+            }
+
             return new SaveSlot(
                 json.getString("id"),
                 json.getString("name"),
                 (float) json.getDouble("playerX"),
                 (float) json.getDouble("playerY"),
-                json.optInt("rota", 1) // Padrão rota 1 se não existir
+                json.optInt("rota", 1),
+                json.optInt("hp", 100),
+                json.optInt("maxHp", 100),
+                json.optInt("level", 1),
+                json.optInt("xp", 0),
+                json.optInt("coins", 0),
+                defeated
             );
         }
     }
 
-    public static void salvarJogo(Context context, String slotId, String slotName, float x, float y, int rota) {
+    public static void salvarJogo(Context context, String slotId, String slotName, float x, float y, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
         List<SaveSlot> slots = carregarTodosSaves(context);
         boolean found = false;
 
+        SaveSlot newSlot = new SaveSlot(slotId, slotName, x, y, rota, hp, maxHp, level, xp, coins, defeatedEnemies);
+
         for (int i = 0; i < slots.size(); i++) {
             if (slots.get(i).id.equals(slotId)) {
-                slots.set(i, new SaveSlot(slotId, slotName, x, y, rota));
+                slots.set(i, newSlot);
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            slots.add(new SaveSlot(slotId, slotName, x, y, rota));
+            slots.add(newSlot);
         }
 
         salvarLista(context, slots);

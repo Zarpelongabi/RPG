@@ -2,6 +2,7 @@ package com.example.rpg_definitivo;
 
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -13,10 +14,10 @@ import android.widget.TextView;
 
 public class BattleActivity extends Activity {
 
-    private ImageView ivEnemy, ivPlayer, ivPlayerPortrait;
-    private TextView tvEnemyName, tvPlayerName, tvPlayerLevel, tvMessage, tvPlayerHpValues, tvPlayerXpValues;
+    private ImageView ivEnemy, ivPlayer;
+    private TextView tvEnemyName, tvPlayerLevel, tvMessage, tvPlayerHpValues, tvPlayerXpValues;
     private ProgressBar pbEnemyHp, pbPlayerHp, pbPlayerXp;
-    private Button btnAttack, btnSkill, btnItem, btnRun;
+    private Button btnAttack, btnRun;
 
     // Atributos do Jogador
     private int playerMaxHp = 100;
@@ -51,9 +52,7 @@ public class BattleActivity extends Activity {
         // Vínculos com o XML
         ivEnemy = findViewById(R.id.iv_enemy_battle);
         ivPlayer = findViewById(R.id.iv_player_battle);
-        ivPlayerPortrait = findViewById(R.id.iv_player_portrait);
         tvEnemyName = findViewById(R.id.tv_enemy_name);
-        tvPlayerName = findViewById(R.id.tv_player_name);
         tvPlayerLevel = findViewById(R.id.tv_player_level);
         tvPlayerHpValues = findViewById(R.id.tv_player_hp_values);
         tvPlayerXpValues = findViewById(R.id.tv_player_xp_values);
@@ -65,8 +64,6 @@ public class BattleActivity extends Activity {
         pbPlayerXp = findViewById(R.id.pb_player_xp);
         
         btnAttack = findViewById(R.id.btn_attack);
-        btnSkill = findViewById(R.id.btn_skill);
-        btnItem = findViewById(R.id.btn_item);
         btnRun = findViewById(R.id.btn_run);
 
         // Configuração inicial do Inimigo
@@ -86,29 +83,25 @@ public class BattleActivity extends Activity {
             }
         }
 
-        // Setup inicial
+        // Setup inicial dos status (Vindo da NovoJogoActivity)
+        playerHp = getIntent().getIntExtra("p_hp", 100);
+        playerMaxHp = getIntent().getIntExtra("p_max_hp", 100);
+        playerLevel = getIntent().getIntExtra("p_level", 1);
+        playerXp = getIntent().getIntExtra("p_xp", 0);
+        xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
+
         enemyHp = enemyMaxHp;
         pbEnemyHp.setMax(enemyMaxHp);
         pbEnemyHp.setProgress(enemyHp);
 
         tvPlayerLevel.setText("" + playerLevel);
-        tvPlayerHpValues.setText(playerHp + "/" + playerMaxHp);
-        tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
-        
-        // No HP "Sombra", progress=0 significa 0 sombra (vida cheia mostra a cor da imagem)
         pbPlayerHp.setMax(playerMaxHp);
-        pbPlayerHp.setProgress(playerMaxHp - playerHp);
-        
-        // No XP "Sombra", progress=MAX significa sombra total (barra de XP começa vazia/escura)
         pbPlayerXp.setMax(xpToNextLevel);
+        
+        // Inicialização das sombras (sem animação no onCreate)
+        pbPlayerHp.setProgress(playerMaxHp - playerHp);
         pbPlayerXp.setProgress(xpToNextLevel - playerXp);
 
-        // Recorta o rosto do personagem para o HUD usando a nova classe FaceCropper
-        Bitmap playerSheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_personagem);
-        Bitmap portrait = FaceCropper.getFace(playerSheet);
-        if (portrait != null) {
-            ivPlayerPortrait.setImageBitmap(portrait);
-        }
 
         tvMessage.setText("Um " + tvEnemyName.getText() + " selvagem apareceu!");
 
@@ -118,6 +111,12 @@ public class BattleActivity extends Activity {
 
         btnRun.setOnClickListener(v -> {
             tvMessage.setText("Você fugiu com segurança!");
+            Intent resultData = new Intent();
+            resultData.putExtra("p_hp", playerHp);
+            resultData.putExtra("p_max_hp", playerMaxHp);
+            resultData.putExtra("p_level", playerLevel);
+            resultData.putExtra("p_xp", playerXp);
+            setResult(RESULT_CANCELED, resultData);
             v.postDelayed(this::finish, 1000);
         });
     }
@@ -155,6 +154,8 @@ public class BattleActivity extends Activity {
         tvMessage.setText("O " + tvEnemyName.getText() + " foi derrotado!");
         ivEnemy.animate().alpha(0).setDuration(500).start();
         
+        Intent resultData = new Intent();
+
         btnAttack.postDelayed(() -> {
             tvMessage.setText("Você ganhou " + enemyXpReward + " pontos de XP!");
             
@@ -163,16 +164,19 @@ public class BattleActivity extends Activity {
                 playerXp -= xpToNextLevel;
                 playerLevel++;
                 xpToNextLevel = (int)(xpToNextLevel * 1.5);
-                pbPlayerXp.setMax(xpToNextLevel);
                 tvPlayerLevel.setText("" + playerLevel);
                 tvMessage.setText("Subiu para o nível " + playerLevel + "!");
                 playerHp = playerMaxHp; 
-                ObjectAnimator.ofInt(pbPlayerHp, "progress", 0).setDuration(500).start();
-                tvPlayerHpValues.setText(playerHp + "/" + playerMaxHp);
+                atualizarBarraHP();
             }
-            ObjectAnimator.ofInt(pbPlayerXp, "progress", xpToNextLevel - playerXp).setDuration(500).start();
-            tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
+            atualizarBarraXP();
             
+            resultData.putExtra("p_hp", playerHp);
+            resultData.putExtra("p_max_hp", playerMaxHp);
+            resultData.putExtra("p_level", playerLevel);
+            resultData.putExtra("p_xp", playerXp);
+            setResult(RESULT_OK, resultData);
+
             btnAttack.postDelayed(this::finish, 2000);
         }, 1000);
     }
@@ -186,15 +190,21 @@ public class BattleActivity extends Activity {
                 int dano = enemyDamage + (int)(Math.random() * 3);
                 playerHp -= dano;
                 
-                // Atualiza o HP com animação da sombra (Max - Atual).
-                int sombraHp = playerMaxHp - Math.max(0, playerHp);
-                ObjectAnimator.ofInt(pbPlayerHp, "progress", sombraHp).setDuration(500).start();
-                tvPlayerHpValues.setText(Math.max(0, playerHp) + "/" + playerMaxHp);
+                // Atualiza o HP com animação da sombra
+                atualizarBarraHP();
 
                 tvMessage.setText("O inimigo atacou e causou " + dano + " de dano!");
 
                 if (playerHp <= 0) {
                     tvMessage.setText("Você foi derrotado...");
+                    
+                    Intent resultData = new Intent();
+                    resultData.putExtra("p_hp", playerHp);
+                    resultData.putExtra("p_max_hp", playerMaxHp);
+                    resultData.putExtra("p_level", playerLevel);
+                    resultData.putExtra("p_xp", playerXp);
+                    setResult(RESULT_CANCELED, resultData);
+
                     btnAttack.postDelayed(this::finish, 2000);
                 } else {
                     isPlayerTurn = true;
@@ -202,5 +212,24 @@ public class BattleActivity extends Activity {
                 }
             }, 100);
         }, 100);
+    }
+
+    /**
+     * Atualiza a barra de HP (Sombra) com animação suave.
+     */
+    private void atualizarBarraHP() {
+        int sombraHp = playerMaxHp - Math.max(0, playerHp);
+        ObjectAnimator.ofInt(pbPlayerHp, "progress", sombraHp).setDuration(500).start();
+        tvPlayerHpValues.setText(Math.max(0, playerHp) + "/" + playerMaxHp);
+    }
+
+    /**
+     * Atualiza a barra de XP (Sombra) com animação suave.
+     */
+    private void atualizarBarraXP() {
+        pbPlayerXp.setMax(xpToNextLevel);
+        int sombraXp = xpToNextLevel - playerXp;
+        ObjectAnimator.ofInt(pbPlayerXp, "progress", sombraXp).setDuration(500).start();
+        tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
     }
 }
