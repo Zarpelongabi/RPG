@@ -1,12 +1,18 @@
 package com.example.rpg_definitivo;
 
 import android.animation.ObjectAnimator;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.CycleInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.CycleInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -15,7 +21,7 @@ import android.widget.TextView;
 public class BattleActivity extends Activity {
 
     private ImageView ivEnemy, ivPlayer;
-    private TextView tvEnemyName, tvPlayerLevel, tvMessage, tvPlayerHpValues, tvPlayerXpValues;
+    private TextView tvEnemyName, tvPlayerLevel, tvMessage;
     private ProgressBar pbEnemyHp, pbPlayerHp, pbPlayerXp;
     private Button btnAttack, btnRun;
 
@@ -39,6 +45,7 @@ public class BattleActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        // Modo Imersivo para esconder barras do sistema
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                         | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -54,17 +61,22 @@ public class BattleActivity extends Activity {
         ivPlayer = findViewById(R.id.iv_player_battle);
         tvEnemyName = findViewById(R.id.tv_enemy_name);
         tvPlayerLevel = findViewById(R.id.tv_player_level);
-        tvPlayerHpValues = findViewById(R.id.tv_player_hp_values);
-        tvPlayerXpValues = findViewById(R.id.tv_player_xp_values);
         tvMessage = findViewById(R.id.tv_battle_message);
         pbEnemyHp = findViewById(R.id.pb_enemy_hp);
         
-        // As ProgressBars agora funcionam como Máscaras de Escurecimento
+        // As ProgressBars agora funcionam como Máscaras de Escurecimento sobre a Sprite HUD
         pbPlayerHp = findViewById(R.id.pb_player_hp);
         pbPlayerXp = findViewById(R.id.pb_player_xp);
         
         btnAttack = findViewById(R.id.btn_attack);
         btnRun = findViewById(R.id.btn_run);
+
+        // Recuperar status vindos do mapa
+        playerHp = getIntent().getIntExtra("p_hp", 100);
+        playerMaxHp = getIntent().getIntExtra("p_max_hp", 100);
+        playerLevel = getIntent().getIntExtra("p_level", 1);
+        playerXp = getIntent().getIntExtra("p_xp", 0);
+        xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
 
         // Configuração inicial do Inimigo
         int enemyResId = getIntent().getIntExtra("enemy_res", R.drawable.sprite_batalhagoblin);
@@ -76,32 +88,19 @@ public class BattleActivity extends Activity {
             tvEnemyName.setText(enemyName.toUpperCase());
             if (enemyName.contains("Boss")) {
                 enemyMaxHp = 80; enemyDamage = 15; enemyXpReward = 50;
-            } else if (enemyName.contains("Exp")) {
-                enemyMaxHp = 30; enemyDamage = 8; enemyXpReward = 15;
             } else {
                 enemyMaxHp = 20; enemyDamage = 5; enemyXpReward = 5;
             }
         }
 
-        // Setup inicial dos status (Vindo da NovoJogoActivity)
-        playerHp = getIntent().getIntExtra("p_hp", 100);
-        playerMaxHp = getIntent().getIntExtra("p_max_hp", 100);
-        playerLevel = getIntent().getIntExtra("p_level", 1);
-        playerXp = getIntent().getIntExtra("p_xp", 0);
-        xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
-
         enemyHp = enemyMaxHp;
         pbEnemyHp.setMax(enemyMaxHp);
         pbEnemyHp.setProgress(enemyHp);
 
-        tvPlayerLevel.setText("" + playerLevel);
-        pbPlayerHp.setMax(playerMaxHp);
-        pbPlayerXp.setMax(xpToNextLevel);
+        tvPlayerLevel.setText(String.valueOf(playerLevel));
         
-        // Inicialização das sombras (sem animação no onCreate)
-        pbPlayerHp.setProgress(playerMaxHp - playerHp);
-        pbPlayerXp.setProgress(xpToNextLevel - playerXp);
-
+        // Sincroniza a HUD inicial sem animação
+        atualizarHUD(false);
 
         tvMessage.setText("Um " + tvEnemyName.getText() + " selvagem apareceu!");
 
@@ -111,14 +110,162 @@ public class BattleActivity extends Activity {
 
         btnRun.setOnClickListener(v -> {
             tvMessage.setText("Você fugiu com segurança!");
-            Intent resultData = new Intent();
-            resultData.putExtra("p_hp", playerHp);
-            resultData.putExtra("p_max_hp", playerMaxHp);
-            resultData.putExtra("p_level", playerLevel);
-            resultData.putExtra("p_xp", playerXp);
-            setResult(RESULT_CANCELED, resultData);
-            v.postDelayed(this::finish, 1000);
+            encerrarBatalha(RESULT_CANCELED);
         });
+    }
+
+    private void realizarAtaqueJogador() {
+        isPlayerTurn = false;
+        
+        // Pulo de ataque fluido (Arco parabólico de movimento)
+        ivPlayer.animate()
+                .translationXBy(100)
+                .translationYBy(-50)
+                .setDuration(150)
+                .setInterpolator(new DecelerateInterpolator())
+                .withEndAction(() -> {
+                    ivPlayer.animate()
+                            .translationXBy(-100)
+                            .translationYBy(50)
+                            .setDuration(150)
+                            .setInterpolator(new AccelerateDecelerateInterpolator())
+                            .withEndAction(this::aplicarDanoAoInimigo).start();
+                }).start();
+    }
+
+    private void aplicarDanoAoInimigo() {
+        int dano = 6 + (playerLevel * 2) + (int)(Math.random() * 4);
+        enemyHp -= dano;
+        
+        // Efeito de tremer o inimigo ao receber impacto
+        shakeView(ivEnemy);
+        
+        // Barra de vida do inimigo desce suavemente
+        ObjectAnimator anim = ObjectAnimator.ofInt(pbEnemyHp, "progress", Math.max(0, enemyHp));
+        anim.setDuration(400);
+        anim.setInterpolator(new DecelerateInterpolator());
+        anim.start();
+        
+        tvMessage.setText("Você causou " + dano + " de dano!");
+
+        if (enemyHp <= 0) {
+            btnAttack.postDelayed(this::vitoria, 600);
+        } else {
+            btnAttack.postDelayed(this::turnoInimigo, 1200);
+        }
+    }
+
+    private void vitoria() {
+        tvMessage.setText("Vitória! O " + tvEnemyName.getText() + " foi derrotado!");
+        // Inimigo desaparece com escala e transparência
+        ivEnemy.animate().alpha(0).scaleX(0).scaleY(0).setDuration(600).start();
+        
+        btnAttack.postDelayed(() -> {
+            tvMessage.setText("Você ganhou " + enemyXpReward + " pontos de experiência!");
+            
+            playerXp += enemyXpReward;
+            boolean subiuNivel = false;
+            
+            while (playerXp >= xpToNextLevel) {
+                playerXp -= xpToNextLevel;
+                playerLevel++;
+                playerMaxHp += 20; // Aumento de vida máxima ao subir de nível
+                playerHp = playerMaxHp; // Cura total ao subir de nível
+                xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
+                subiuNivel = true;
+            }
+
+            if (subiuNivel) {
+                btnAttack.postDelayed(() -> {
+                    tvMessage.setText("LEVEL UP! Você subiu para o nível " + playerLevel + "!");
+                    atualizarHUD(true);
+                    encerrarBatalha(RESULT_OK);
+                }, 1200);
+            } else {
+                atualizarHUD(true);
+                encerrarBatalha(RESULT_OK);
+            }
+        }, 1500);
+    }
+
+    private void turnoInimigo() {
+        setEnemyAnimationFrame(1);
+        // Investida física do inimigo para a esquerda
+        ivEnemy.animate().translationXBy(-40).setDuration(150).setInterpolator(new DecelerateInterpolator()).withEndAction(() -> {
+            setEnemyAnimationFrame(2);
+            ivEnemy.animate().translationXBy(40).setDuration(150).withEndAction(() -> {
+                setEnemyAnimationFrame(0);
+                
+                int dano = enemyDamage + (int)(Math.random() * 3);
+                playerHp -= dano;
+                
+                // Jogador treme ao levar dano
+                shakeView(ivPlayer);
+                atualizarHUD(true);
+
+                tvMessage.setText("O inimigo atacou e causou " + dano + " de dano!");
+
+                if (playerHp <= 0) {
+                    tvMessage.setText("Você foi derrotado...");
+                    encerrarBatalha(RESULT_CANCELED);
+                } else {
+                    isPlayerTurn = true;
+                    btnAttack.postDelayed(() -> tvMessage.setText("O que você fará?"), 800);
+                }
+            }).start();
+        }).start();
+    }
+
+    /**
+     * Sincroniza o Level e as Barras de status (Sombras) com animação suave.
+     */
+    private void atualizarHUD(boolean animar) {
+        tvPlayerLevel.setText(String.valueOf(playerLevel));
+        
+        int sombraHp = playerMaxHp - Math.max(0, playerHp);
+        int sombraXp = xpToNextLevel - playerXp;
+
+        pbPlayerHp.setMax(playerMaxHp);
+        pbPlayerXp.setMax(xpToNextLevel);
+        
+        if (animar) {
+            // Animação orgânica da barra de vida
+            ObjectAnimator animHp = ObjectAnimator.ofInt(pbPlayerHp, "progress", sombraHp);
+            animHp.setDuration(600);
+            animHp.setInterpolator(new AccelerateDecelerateInterpolator());
+            animHp.start();
+
+            // Animação suave da barra de XP
+            ObjectAnimator animXp = ObjectAnimator.ofInt(pbPlayerXp, "progress", sombraXp);
+            animXp.setDuration(800);
+            animXp.setInterpolator(new DecelerateInterpolator());
+            animXp.start();
+        } else {
+            pbPlayerHp.setProgress(sombraHp);
+            pbPlayerXp.setProgress(sombraXp);
+        }
+    }
+
+    /**
+     * Efeito de tremer (vibrar) um elemento na tela.
+     */
+    private void shakeView(View view) {
+        view.animate()
+            .translationXBy(20)
+            .setDuration(50)
+            .setInterpolator(new CycleInterpolator(3))
+            .withEndAction(() -> view.setTranslationX(0))
+            .start();
+    }
+
+    private void encerrarBatalha(int resultCode) {
+        Intent resultData = new Intent();
+        resultData.putExtra("p_hp", playerHp);
+        resultData.putExtra("p_max_hp", playerMaxHp);
+        resultData.putExtra("p_level", playerLevel);
+        resultData.putExtra("p_xp", playerXp);
+        setResult(resultCode, resultData);
+        btnAttack.postDelayed(this::finish, 1800);
     }
 
     private void setEnemyAnimationFrame(int frameIndex) {
@@ -129,107 +276,5 @@ public class BattleActivity extends Activity {
             Bitmap frame = Bitmap.createBitmap(enemySheet, Math.max(0, Math.min(frameIndex, 2)) * frameWidth, 0, frameWidth, frameHeight);
             ivEnemy.setImageBitmap(frame);
         } catch (Exception e) {}
-    }
-
-    private void realizarAtaqueJogador() {
-        isPlayerTurn = false;
-        // Pulo do Herói
-        ivPlayer.animate().translationXBy(80).translationYBy(-40).setDuration(120).withEndAction(() -> {
-            ivPlayer.animate().translationXBy(-80).translationYBy(40).setDuration(120).withEndAction(() -> {
-                int dano = 6 + (int)(Math.random() * 4);
-                enemyHp -= dano;
-                ObjectAnimator.ofInt(pbEnemyHp, "progress", Math.max(0, enemyHp)).setDuration(500).start();
-                tvMessage.setText("Você causou " + dano + " de dano!");
-
-                if (enemyHp <= 0) {
-                    vitoria();
-                } else {
-                    btnAttack.postDelayed(this::turnoInimigo, 1000);
-                }
-            }).start();
-        }).start();
-    }
-
-    private void vitoria() {
-        tvMessage.setText("O " + tvEnemyName.getText() + " foi derrotado!");
-        ivEnemy.animate().alpha(0).setDuration(500).start();
-        
-        Intent resultData = new Intent();
-
-        btnAttack.postDelayed(() -> {
-            tvMessage.setText("Você ganhou " + enemyXpReward + " pontos de XP!");
-            
-            playerXp += enemyXpReward;
-            if (playerXp >= xpToNextLevel) {
-                playerXp -= xpToNextLevel;
-                playerLevel++;
-                xpToNextLevel = (int)(xpToNextLevel * 1.5);
-                tvPlayerLevel.setText("" + playerLevel);
-                tvMessage.setText("Subiu para o nível " + playerLevel + "!");
-                playerHp = playerMaxHp; 
-                atualizarBarraHP();
-            }
-            atualizarBarraXP();
-            
-            resultData.putExtra("p_hp", playerHp);
-            resultData.putExtra("p_max_hp", playerMaxHp);
-            resultData.putExtra("p_level", playerLevel);
-            resultData.putExtra("p_xp", playerXp);
-            setResult(RESULT_OK, resultData);
-
-            btnAttack.postDelayed(this::finish, 2000);
-        }, 1000);
-    }
-
-    private void turnoInimigo() {
-        setEnemyAnimationFrame(1);
-        ivEnemy.postDelayed(() -> {
-            setEnemyAnimationFrame(2);
-            ivEnemy.postDelayed(() -> {
-                setEnemyAnimationFrame(0);
-                int dano = enemyDamage + (int)(Math.random() * 3);
-                playerHp -= dano;
-                
-                // Atualiza o HP com animação da sombra
-                atualizarBarraHP();
-
-                tvMessage.setText("O inimigo atacou e causou " + dano + " de dano!");
-
-                if (playerHp <= 0) {
-                    tvMessage.setText("Você foi derrotado...");
-                    
-                    Intent resultData = new Intent();
-                    resultData.putExtra("p_hp", playerHp);
-                    resultData.putExtra("p_max_hp", playerMaxHp);
-                    resultData.putExtra("p_level", playerLevel);
-                    resultData.putExtra("p_xp", playerXp);
-                    setResult(RESULT_CANCELED, resultData);
-
-                    btnAttack.postDelayed(this::finish, 2000);
-                } else {
-                    isPlayerTurn = true;
-                    tvMessage.setText("O que você fará?");
-                }
-            }, 100);
-        }, 100);
-    }
-
-    /**
-     * Atualiza a barra de HP (Sombra) com animação suave.
-     */
-    private void atualizarBarraHP() {
-        int sombraHp = playerMaxHp - Math.max(0, playerHp);
-        ObjectAnimator.ofInt(pbPlayerHp, "progress", sombraHp).setDuration(500).start();
-        tvPlayerHpValues.setText(Math.max(0, playerHp) + "/" + playerMaxHp);
-    }
-
-    /**
-     * Atualiza a barra de XP (Sombra) com animação suave.
-     */
-    private void atualizarBarraXP() {
-        pbPlayerXp.setMax(xpToNextLevel);
-        int sombraXp = xpToNextLevel - playerXp;
-        ObjectAnimator.ofInt(pbPlayerXp, "progress", sombraXp).setDuration(500).start();
-        tvPlayerXpValues.setText(playerXp + " / " + xpToNextLevel);
     }
 }
