@@ -21,7 +21,7 @@ import android.widget.Toast;
 public class BattleActivity extends Activity {
 
     private ImageView ivEnemy, ivPlayer, ivHpFrame;
-    private TextView tvEnemyName, tvPlayerLevel, tvMessage;
+    private TextView tvEnemyName, tvMessage;
     private ProgressBar pbEnemyHp, pbPlayerHp, pbPlayerXp;
     private Button btnAttack, btnRun;
 
@@ -37,7 +37,7 @@ public class BattleActivity extends Activity {
     private int enemyHp = 20;
     private int enemyDamage = 5;
     private int enemyXpReward = 5;
-    
+
     private boolean isPlayerTurn = true;
     private boolean testDanoZero = false;
     private Bitmap enemySheet;
@@ -49,7 +49,7 @@ public class BattleActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         // Modo Imersivo para esconder barras do sistema
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -66,14 +66,13 @@ public class BattleActivity extends Activity {
         ivPlayer = findViewById(R.id.iv_player_battle);
         ivHpFrame = findViewById(R.id.iv_hp_frame);
         tvEnemyName = findViewById(R.id.tv_enemy_name);
-        tvPlayerLevel = findViewById(R.id.tv_player_level);
         tvMessage = findViewById(R.id.tv_battle_message);
         pbEnemyHp = findViewById(R.id.pb_enemy_hp);
-        
+
         // As ProgressBars agora funcionam como Máscaras de Escurecimento sobre a Sprite HUD
         pbPlayerHp = findViewById(R.id.pb_player_hp);
         pbPlayerXp = findViewById(R.id.pb_player_xp);
-        
+
         btnAttack = findViewById(R.id.btn_attack);
         btnRun = findViewById(R.id.btn_run);
 
@@ -107,8 +106,6 @@ public class BattleActivity extends Activity {
         pbEnemyHp.setMax(enemyMaxHp);
         pbEnemyHp.setProgress(enemyHp);
 
-        tvPlayerLevel.setText(String.valueOf(playerLevel));
-        
         // Sincroniza a HUD inicial sem animação
         atualizarHUD(false);
 
@@ -120,7 +117,7 @@ public class BattleActivity extends Activity {
                 popup.getMenu().add("Ataque Normal");
                 popup.getMenu().add("Ataque Teste (Dano 0)");
                 popup.getMenu().add("Tomar Dano (Teste HUD)");
-                
+
                 popup.setOnMenuItemClickListener(item -> {
                     String title = item.getTitle().toString();
                     if (title.equals("Tomar Dano (Teste HUD)")) {
@@ -151,7 +148,7 @@ public class BattleActivity extends Activity {
     private void realizarAtaqueJogador() {
         isPlayerTurn = false;
         setPlayerAnimationFrame(1); // Frame de Preparação/Salto
-        
+
         // Pulo de ataque fluido (Arco parabólico de movimento)
         ivPlayer.animate()
                 .translationXBy(100)
@@ -175,16 +172,16 @@ public class BattleActivity extends Activity {
     private void aplicarDanoAoInimigo() {
         int dano = testDanoZero ? 0 : 6 + (playerLevel * 2) + (int)(Math.random() * 4);
         enemyHp -= dano;
-        
+
         // Efeito de tremer o inimigo ao receber impacto
         shakeView(ivEnemy);
-        
+
         // Barra de vida do inimigo desce suavemente
         ObjectAnimator anim = ObjectAnimator.ofInt(pbEnemyHp, "progress", Math.max(0, enemyHp));
         anim.setDuration(400);
         anim.setInterpolator(new DecelerateInterpolator());
         anim.start();
-        
+
         tvMessage.setText("Você causou " + dano + " de dano!");
 
         if (enemyHp <= 0) {
@@ -195,37 +192,51 @@ public class BattleActivity extends Activity {
     }
 
     private void vitoria() {
-        tvMessage.setText("Vitória! O " + tvEnemyName.getText() + " foi derrotado!");
-        // Inimigo desaparece com escala e transparência
-        ivEnemy.animate().alpha(0).scaleX(0).scaleY(0).setDuration(600).start();
-        
+        tvMessage.setText("VITÓRIA!");
+        // O inimigo desaparece
+        ivEnemy.animate().alpha(0).scaleX(0).scaleY(0).setDuration(800).start();
+
         btnAttack.postDelayed(() -> {
-            tvMessage.setText("Você ganhou " + enemyXpReward + " pontos de experiência!");
+            // Exibe o XP ganho na caixa de mensagem
+            tvMessage.setText("VOCÊ GANHOU " + enemyXpReward + " XP!");
             
+            // Pequena animação de pulo no jogador
+            ivPlayer.animate().translationYBy(-40).setDuration(200).setInterpolator(new DecelerateInterpolator()).withEndAction(() -> 
+                ivPlayer.animate().translationYBy(40).setDuration(200).setInterpolator(new AccelerateDecelerateInterpolator()).start()
+            ).start();
+
+            // Atualiza os dados de XP e verifica Level Up
             playerXp += enemyXpReward;
             boolean subiuNivel = false;
-            
+
             while (playerXp >= xpToNextLevel) {
                 playerXp -= xpToNextLevel;
                 playerLevel++;
-                playerMaxHp += 20; // Aumento de vida máxima ao subir de nível
-                playerHp = playerMaxHp; // Cura total ao subir de nível
+                playerMaxHp += 20; 
+                playerHp = playerMaxHp; // Cura completa ao subir de nível
                 xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
                 subiuNivel = true;
             }
 
+            // Anima a barra de XP (e HP se subiu de nível)
+            atualizarHUD(true);
+
             if (subiuNivel) {
                 btnAttack.postDelayed(() -> {
-                    tvMessage.setText("LEVEL UP! Você subiu para o nível " + playerLevel + "!");
-                    atualizarHUD(true);
-                    // Aguarda a animação da HUD e a leitura da mensagem antes de fechar
-                    btnAttack.postDelayed(() -> encerrarBatalha(RESULT_OK), 2000);
-                }, 1200);
+                    // Mensagem de Level Up destacada
+                    tvMessage.setText("LEVEL UP! VOCÊ ESTÁ NO NÍVEL " + playerLevel);
+                    
+                    // Efeito de "brilho" e escala para o Level Up
+                    ivPlayer.animate().scaleX(1.3f).scaleY(1.3f).alpha(0.6f).setDuration(300).withEndAction(() -> 
+                        ivPlayer.animate().scaleX(1.0f).scaleY(1.0f).alpha(1.0f).setDuration(300).start()
+                    ).start();
+
+                    btnAttack.postDelayed(() -> encerrarBatalha(RESULT_OK), 2500);
+                }, 1200); // Aguarda a barra de XP terminar de encher
             } else {
-                atualizarHUD(true);
-                btnAttack.postDelayed(() -> encerrarBatalha(RESULT_OK), 1000);
+                btnAttack.postDelayed(() -> encerrarBatalha(RESULT_OK), 1800);
             }
-        }, 1500);
+        }, 1000);
     }
 
     private void turnoInimigo() {
@@ -235,10 +246,10 @@ public class BattleActivity extends Activity {
             setEnemyAnimationFrame(2);
             ivEnemy.animate().translationXBy(40).setDuration(150).withEndAction(() -> {
                 setEnemyAnimationFrame(0);
-                
+
                 int dano = enemyDamage + (int)(Math.random() * 3);
                 playerHp -= dano;
-                
+
                 // Jogador treme ao levar dano
                 setPlayerAnimationFrame(2); // Frame de Dano
                 shakeView(ivPlayer);
@@ -264,8 +275,6 @@ public class BattleActivity extends Activity {
      * Também alterna entre os frames da Spritesheet da HUD conforme o HP.
      */
     private void atualizarHUD(boolean animar) {
-        tvPlayerLevel.setText(String.valueOf(playerLevel));
-        
         final int targetSombraHp = playerMaxHp - Math.max(0, playerHp);
         final int targetSombraXp = xpToNextLevel - playerXp;
 
@@ -347,18 +356,18 @@ public class BattleActivity extends Activity {
                 try {
                     int sheetWidth = currentHudSheet.getWidth();
                     int sheetHeight = currentHudSheet.getHeight();
-                    
+
                     // Se a imagem for uma spritesheet (5 frames horizontais)
                     if (sheetWidth > sheetHeight * 1.5) {
                         int frameWidth = sheetWidth / 5;
                         int frameHeight = sheetHeight;
                         int xStart = Math.min(xpFrame, 4) * frameWidth;
-                        
+
                         // Garante que o recorte está dentro dos limites da bitmap
                         if (xStart + frameWidth > sheetWidth) {
                             frameWidth = sheetWidth - xStart;
                         }
-                        
+
                         Bitmap frame = Bitmap.createBitmap(currentHudSheet, xStart, 0, frameWidth, frameHeight);
                         ivHpFrame.setImageBitmap(frame);
                     } else {
@@ -379,12 +388,12 @@ public class BattleActivity extends Activity {
         isPlayerTurn = false;
         playerHp = 0;
         updateHudSprite(0, playerXp);
-        
+
         tvMessage.setText("GAME OVER! Você foi derrotado...");
-        
+
         // Faz o jogador desaparecer lentamente
         ivPlayer.animate().alpha(0).setDuration(1500).start();
-        
+
         btnAttack.postDelayed(() -> {
             Intent intent = new Intent(this, MainActivity.class);
             // Limpa a pilha de atividades para voltar ao menu principal
@@ -399,15 +408,15 @@ public class BattleActivity extends Activity {
      */
     private void shakeView(View view) {
         view.animate()
-            .translationXBy(20)
-            .setDuration(50)
-            .setInterpolator(new CycleInterpolator(3))
-            .withEndAction(() -> {
-                view.setTranslationX(0);
-                view.setAlpha(1.0f);
-            })
-            .start();
-            
+                .translationXBy(20)
+                .setDuration(50)
+                .setInterpolator(new CycleInterpolator(3))
+                .withEndAction(() -> {
+                    view.setTranslationX(0);
+                    view.setAlpha(1.0f);
+                })
+                .start();
+
         // Flash vermelho ou transparência ao receber dano
         ValueAnimator flash = ValueAnimator.ofFloat(1f, 0.4f, 1f);
         flash.setDuration(150);
