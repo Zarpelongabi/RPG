@@ -69,8 +69,25 @@ public class IntroActivity extends Activity {
 
     private void finalizarIntro() {
         handler.removeCallbacksAndMessages(null);
-        Intent intent = new Intent(this, NovoJogoActivity.class);
-        startActivity(intent);
-        finish();
+        
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Como você se chama?");
+        
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint("Digite seu nome...");
+        builder.setView(input);
+
+        builder.setPositiveButton("Começar Jornada", (dialog, which) -> {
+            String nome = input.getText().toString().trim();
+            if (nome.isEmpty()) nome = "Herói";
+            
+            Intent intent = new Intent(this, NovoJogoActivity.class);
+            intent.putExtra("player_name", nome);
+            startActivity(intent);
+            finish();
+        });
+
+        builder.setCancelable(false);
+        builder.show();
     }
 }

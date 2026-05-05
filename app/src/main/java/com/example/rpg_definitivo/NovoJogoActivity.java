@@ -12,6 +12,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.example.rpg_definitivo.backend.managers.EnemyManager;
 
@@ -21,6 +23,10 @@ public class NovoJogoActivity extends Activity {
     // FIELDS — Componentes da UI (XML)
     // =========================================================================
     private PlayerView playerView;
+    private ImageView ivHpFrame;
+    private Bitmap currentHudSheet;
+    private int lastHudResId = -1;
+    private int lastXpFrame = -1;
     private ImageView mapView;
     private FrameLayout mainLayout;
 
@@ -150,8 +156,67 @@ public class NovoJogoActivity extends Activity {
     }
 
     private void updateHUD() {
-        // Se tivéssemos referências para as barras no HUD do mapa, atualizaríamos aqui.
-        // Por enquanto, os valores estão salvos nas variáveis.
+        if (ivHpFrame == null) return;
+
+        // 1. Seleciona o Recurso de HP
+        int resId;
+        float percentHp = (float) playerHp / playerMaxHp;
+
+        if (playerHp <= 0) {
+            resId = R.drawable.hud_0hp;
+        } else if (percentHp > 0.75f) {
+            resId = R.drawable.hud_100hp;
+        } else if (percentHp > 0.50f) {
+            resId = R.drawable.hud_75hp;
+        } else if (percentHp > 0.25f) {
+            resId = R.drawable.hud_50hp;
+        } else {
+            resId = R.drawable.hud_25hp;
+        }
+
+        // 2. Calcula o Frame de XP (0 a 4)
+        int xpFrame = 0;
+        int xpToNext = (int)(20 * Math.pow(1.5, playerLevel - 1));
+        if (xpToNext > 0) {
+            float percentXp = (float) playerXp / xpToNext;
+            if (percentXp < 0.20f) xpFrame = 0;
+            else if (percentXp < 0.40f) xpFrame = 1;
+            else if (percentXp < 0.60f) xpFrame = 2;
+            else if (percentXp < 0.80f) xpFrame = 3;
+            else xpFrame = 4;
+        }
+
+        // 3. Aplica o Recurso e faz o Recorte
+        if (resId != lastHudResId || xpFrame != lastXpFrame) {
+            if (resId != lastHudResId) {
+                lastHudResId = resId;
+                if (currentHudSheet != null && !currentHudSheet.isRecycled()) {
+                    currentHudSheet.recycle();
+                }
+                currentHudSheet = BitmapFactory.decodeResource(getResources(), resId);
+            }
+            lastXpFrame = xpFrame;
+
+            if (currentHudSheet != null) {
+                try {
+                    int sw = currentHudSheet.getWidth();
+                    int sh = currentHudSheet.getHeight();
+                    
+                    // Cálculo preciso do frame (cada frame é 20% da largura total da spritesheet de 5 frames)
+                    int frameWidth = sw / 5;
+                    int xStart = Math.min(xpFrame, 4) * frameWidth;
+
+                    // Cria o bitmap apenas do frame desejado para evitar que apareçam os outros 4
+                    Bitmap cropped = Bitmap.createBitmap(currentHudSheet, xStart, 0, frameWidth, sh);
+                    
+                    // Aplica ao ImageView e remove qualquer imagem anterior
+                    ivHpFrame.setImageBitmap(cropped);
+                } catch (Exception e) {
+                    // Em caso de erro, evita mostrar a folha inteira esmagada
+                    ivHpFrame.setImageDrawable(null);
+                }
+            }
+        }
     }
 
     private void linkarInterface() {
@@ -171,6 +236,7 @@ public class NovoJogoActivity extends Activity {
         tvSalvar = findViewById(R.id.tv_salvar);
         tvSairJogo = findViewById(R.id.tv_sair_jogo);
         tvLevelUpToast = findViewById(R.id.tv_level_up_toast);
+        ivHpFrame = findViewById(R.id.iv_map_hp_frame);
 
         // Ação do botão de Pause/Menu
         btnPause.setOnClickListener(v -> togglePause());
@@ -185,13 +251,8 @@ public class NovoJogoActivity extends Activity {
             finish(); // Volta para a tela inicial (MainActivity)
         });
 
-        // Ação do botão de Ação (ex: Usar poção, atacar)
-        btnAction.setOnClickListener(v -> {
-            if (!isPaused) {
-                // Exemplo: usePotionOnMap();
-                Toast.makeText(this, "AÇÃO!", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // Inicializa a HUD
+        updateHUD();
     }
 
     private void showSaveDialog() {
@@ -400,6 +461,7 @@ public class NovoJogoActivity extends Activity {
                 playerLevel = data.getIntExtra("p_level", playerLevel);
                 playerXp = data.getIntExtra("p_xp", playerXp);
                 // Moedas podem ser adicionadas aqui também se BattleActivity as gerenciar
+                updateHUD();
             }
 
             if (resultCode == RESULT_OK && lastEnemyIndex != -1) {
