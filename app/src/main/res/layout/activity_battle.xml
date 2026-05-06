@@ -11,84 +11,57 @@
         android:scaleType="centerCrop"
         android:src="@drawable/battlebg2" />
 
-    <!-- STATUS DO INIMIGO (Estilo GBA Tradicional) -->
+    <!-- STATUS DO INIMIGO -->
     <RelativeLayout
-        android:layout_width="190dp"
+        android:id="@+id/enemy_status_container"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="40dp"
         android:layout_marginStart="20dp"
-        android:background="#E8E8E8"
-        android:padding="6dp"
+        android:background="@drawable/box_message"
+        android:padding="8dp"
         android:elevation="4dp">
-
-        <!-- Borda superior preta estilo Pokemon -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="#333333"
-            android:layout_alignParentTop="true"/>
 
         <TextView
             android:id="@+id/tv_enemy_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:text="GOBLIN"
-            android:textColor="#444444"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:shadowColor="#000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"/>
 
-        <TextView
-            android:id="@+id/tv_enemy_level_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="4dp"
-            android:text="Lv: 5"
-            android:textColor="#444444"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <!-- Barra de HP do Inimigo -->
         <ProgressBar
             android:id="@+id/pb_enemy_hp"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="10dp"
+            android:layout_height="12dp"
             android:layout_below="@id/tv_enemy_name"
             android:layout_marginTop="6dp"
             android:progressDrawable="@android:drawable/progress_horizontal"
-            android:progressTint="#4CAF50"
-            android:backgroundTint="#888888" />
-
-        <!-- Borda inferior estilo Pokemon -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:background="#333333"
-            android:layout_below="@id/pb_enemy_hp"
-            android:layout_marginTop="4dp"/>
+            android:progressTint="#4CAF50" />
     </RelativeLayout>
-
-    <!-- SPRITE DO INIMIGO -->
-
-    <!-- STATUS DO JOGADOR (Seu Quadro de Madeira) -->
 
     <ImageView
         android:id="@+id/iv_enemy_battle"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
         android:layout_gravity="top|end"
-        android:layout_marginTop="50dp"
-        android:layout_marginEnd="50dp" />
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="40dp" />
 
+    <!-- STATUS DO JOGADOR (HUD DINÂMICA) -->
     <RelativeLayout
         android:layout_width="320dp"
-        android:layout_height="120dp"
+        android:layout_height="125dp"
         android:layout_gravity="bottom|end"
-        android:layout_marginBottom="125dp"
-        android:layout_marginEnd="5dp">
+        android:layout_marginBottom="130dp"
+        android:layout_marginEnd="10dp">
 
         <ImageView
             android:id="@+id/iv_hp_frame"
@@ -97,21 +70,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/hud_100hp" />
 
-        <!-- RETRATO DO PERSONAGEM (REMOVIDO) -->
-
-        <!-- Nome do Herói (REMOVIDO PARA LIMPAR O HUD) -->
-        <TextView
-            android:id="@+id/tv_player_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="85dp"
-            android:layout_marginTop="16dp"
-            android:text=""
-            android:visibility="gone" />
-
-        <!-- NÍVEL: Reposicionado para ficar exatamente à frente de "LVL:" na imagem barra_hud -->
-
-        <!-- BARRA DE HP (MÁSCARA) -->
+        <!-- Máscaras de sombra para suavizar a barra do sprite -->
         <ProgressBar
             android:id="@+id/pb_player_hp"
             style="?android:attr/progressBarStyleHorizontal"
@@ -119,18 +78,9 @@
             android:layout_height="8dp"
             android:layout_marginStart="107dp"
             android:layout_marginTop="46dp"
-            android:progress="100"
-            android:visibility="gone"
-            android:progressDrawable="@drawable/hp_mask" />
+            android:progressDrawable="@drawable/hp_mask"
+            android:visibility="visible" />
 
-        <!-- VALORES DE HP (REMOVIDOS CONFORME PEDIDO) -->
-        <TextView
-            android:id="@+id/tv_player_hp_values"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
-
-        <!-- BARRA DE EXP (MÁSCARA) -->
         <ProgressBar
             android:id="@+id/pb_player_xp"
             style="?android:attr/progressBarStyleHorizontal"
@@ -138,53 +88,43 @@
             android:layout_height="8dp"
             android:layout_marginStart="107dp"
             android:layout_marginTop="73dp"
-            android:progress="0"
-            android:visibility="gone"
-            android:progressDrawable="@drawable/hp_mask" />
-
-        <!-- VALORES DE XP (REMOVIDOS CONFORME PEDIDO) -->
-        <TextView
-            android:id="@+id/tv_player_xp_values"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:progressDrawable="@drawable/hp_mask"
+            android:visibility="visible" />
     </RelativeLayout>
-
-    <!-- SPRITE DO JOGADOR -->
-
-    <!-- CAIXA DE MENSAGEM (Estilo Pokemon) -->
 
     <ImageView
         android:id="@+id/iv_player_battle"
-        android:layout_width="230dp"
-        android:layout_height="230dp"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
         android:layout_gravity="bottom|start"
-        android:layout_marginStart="15dp"
-        android:layout_marginBottom="85dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="90dp"
         android:src="@drawable/sprite_batalhapersonagem" />
 
+    <!-- CAIXA DE MENSAGENS E COMANDOS -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="115dp"
+        android:layout_height="120dp"
         android:layout_gravity="bottom"
-        android:background="#E0222222"
+        android:background="@drawable/box_message"
         android:orientation="horizontal"
-        android:padding="10dp"
-        android:elevation="10dp">
+        android:padding="12dp"
+        android:layout_margin="5dp">
 
         <TextView
             android:id="@+id/tv_battle_message"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1.2"
+            android:layout_weight="1.3"
             android:gravity="center_vertical"
-            android:padding="10dp"
+            android:padding="8dp"
             android:text="O que o Herói fará?"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:lineSpacingExtra="4dp" />
+            android:textSize="17sp"
+            android:fontFamily="serif"
+            android:clickable="true"
+            android:focusable="true" />
 
-        <!-- Menu de Comandos (Grade 2x2 clássica) -->
         <GridLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -192,53 +132,10 @@
             android:columnCount="2"
             android:rowCount="2">
 
-            <Button
-                android:id="@+id/btn_attack"
-                android:layout_width="0dp"
-                android:layout_columnWeight="1"
-                android:layout_height="42dp"
-                android:text="LUTAR"
-                android:textSize="12sp"
-                android:backgroundTint="#A04038"
-                android:layout_margin="2dp"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btn_skill"
-                android:layout_width="0dp"
-                android:layout_columnWeight="1"
-                android:layout_height="42dp"
-                android:text="SKILL"
-                android:textSize="12sp"
-                android:layout_margin="2dp"
-                android:backgroundTint="#506090"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btn_item"
-                android:layout_width="0dp"
-                android:layout_columnWeight="1"
-                android:layout_height="42dp"
-                android:text="BOLSA"
-                android:textSize="12sp"
-                android:layout_margin="2dp"
-                android:backgroundTint="#508050"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btn_run"
-                android:layout_width="0dp"
-                android:layout_columnWeight="1"
-                android:layout_height="42dp"
-                android:text="FUGIR"
-                android:textSize="12sp"
-                android:layout_margin="2dp"
-                android:backgroundTint="#606060"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold" />
+            <Button android:id="@+id/btn_attack" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="44dp" android:text="LUTAR" android:backgroundTint="#B22222" android:layout_margin="2dp" android:textSize="12sp" android:textStyle="bold" />
+            <Button android:id="@+id/btn_skill" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="44dp" android:text="SKILL" android:backgroundTint="#4682B4" android:layout_margin="2dp" android:textSize="12sp" />
+            <Button android:id="@+id/btn_item" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="44dp" android:text="BOLSA" android:backgroundTint="#556B2F" android:layout_margin="2dp" android:textSize="12sp" />
+            <Button android:id="@+id/btn_run" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="44dp" android:text="FUGIR" android:backgroundTint="#555555" android:layout_margin="2dp" android:textSize="12sp" />
         </GridLayout>
     </LinearLayout>
 </FrameLayout>

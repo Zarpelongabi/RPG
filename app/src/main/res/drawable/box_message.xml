@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:startColor="#F21A1A1A"
+        android:centerColor="#F2262626"
+        android:endColor="#F21A1A1A"
+        android:angle="90"/>
+    <stroke
+        android:width="2dp"
+        android:color="#D4AF37"/> <!-- Cor Ouro para combinar com os detalhes do sprite -->
+    <corners android:radius="10dp"/>
+    <padding android:left="12dp" android:top="10dp" android:right="12dp" android:bottom="10dp"/>
+</shape>

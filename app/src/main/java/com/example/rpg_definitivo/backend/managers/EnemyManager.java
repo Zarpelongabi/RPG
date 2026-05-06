@@ -1,275 +1,116 @@
 package com.example.rpg_definitivo.backend.managers;
 
 import android.content.Context;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-
-import java.util.ArrayList;
-import java.util.List;
-
-// Importe seus modelos quando portá-los para o Android
-import com.example.rpg_definitivo.backend.models.BossGoblin;
-import com.example.rpg_definitivo.backend.models.Goblin;
-import com.example.rpg_definitivo
-        .backend.models.GoblinExp;
-import com.example.rpg_definitivo.backend.models.Monsters;
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Rect;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import java.util.ArrayList;
+import java.util.List;
+import com.example.rpg_definitivo.backend.models.BossGoblin;
+import com.example.rpg_definitivo.backend.models.Goblin;
+import com.example.rpg_definitivo.backend.models.GoblinExp;
+import com.example.rpg_definitivo.backend.models.Monsters;
 
 public class EnemyManager {
-
-    // =========================================================================
-    // FIELDS
-    // =========================================================================
-
-    private final Context context;          // Necessário no Android para criar Views
-    private final FrameLayout gameRoot;     // O equivalente ao Pane do JavaFX
-
-    private final double screenW;
-    private final double screenH;
-
+    private final Context context;
+    private final FrameLayout gameRoot;
+    private final double screenW, screenH;
     private final List<Monsters> monsters = new ArrayList<>();
-    private final List<ImageView> views   = new ArrayList<>();
-
+    private final List<ImageView> views = new ArrayList<>();
     private final boolean[][] defeatedEnemies;
     private int currentMapIndex = 0;
 
-    // =========================================================================
-    // CONSTRUCTOR
-    // =========================================================================
-
-    public EnemyManager(Context context, FrameLayout gameRoot, double screenW, double screenH,
-                        boolean[][] defeatedEnemies) {
-        this.context = context;
-        this.gameRoot = gameRoot;
-        this.screenW = screenW;
-        this.screenH = screenH;
-        this.defeatedEnemies = defeatedEnemies;
+    public EnemyManager(Context context, FrameLayout gameRoot, double screenW, double screenH, boolean[][] defeatedEnemies) {
+        this.context = context; this.gameRoot = gameRoot; this.screenW = screenW; this.screenH = screenH; this.defeatedEnemies = defeatedEnemies;
     }
-
-    // =========================================================================
-    // MAP CONFIGURATION
-    // =========================================================================
 
     public void configureForMap(int mapIndex) {
         this.currentMapIndex = mapIndex;
-
-        // Remove todos os inimigos da tela (do layout)
-        for (ImageView view : views) {
-            gameRoot.removeView(view);
-        }
-        monsters.clear();
-        views.clear();
-
+        for (ImageView view : views) gameRoot.removeView(view);
+        monsters.clear(); views.clear();
         spawnEnemiesForMap(mapIndex);
     }
 
     private void spawnEnemiesForMap(int mapIndex) {
+        int normalSize = (int) (80 * context.getResources().getDisplayMetrics().density);
         switch (mapIndex) {
-            case 0:
-                spawnMap0Enemies();
-                break;
-            case 1:
-                spawnMap1Enemies();
-                break;
-            case 2:
-                spawnMap2Enemies();
-                break;
+            case 0: addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
+            case 1: addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
+            case 2: addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
         }
     }
 
-    private void spawnMap0Enemies() {
-        int normalSize = (int) (60 * context.getResources().getDisplayMetrics().density);
-        addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, 128, normalSize);
-    }
-
-    private void spawnMap1Enemies() {
-        int normalSize = (int) (70 * context.getResources().getDisplayMetrics().density);
-        // Agora apenas 1 inimigo por rota, do tamanho do personagem (80dp)
-        addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, 128, normalSize);
-    }
-
-    private void spawnMap2Enemies() {
-        int normalSize = (int) (90 * context.getResources().getDisplayMetrics().density);
-        // Boss agora do mesmo tamanho que o personagem (80dp)
-        addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, 256, normalSize);
-    }
-
-    private void addEnemy(Monsters monster, int uniqueId,
-                          double x, double y, int spriteSize, int displaySize) {
-
-        if (defeatedEnemies[currentMapIndex][uniqueId]) {
-            return;
-        }
-
-        ImageView enemyView = createEnemyImageView(monster, spriteSize, displaySize, x, y);
-        if (enemyView == null) return;
-
-        storeEnemyProperties(enemyView, uniqueId, spriteSize, displaySize, monster);
-
-        monsters.add(monster);
-        views.add(enemyView);
-        gameRoot.addView(enemyView); // Adiciona na tela do celular
-    }
-
-    private ImageView createEnemyImageView(Monsters monster, int spriteSize,
-                                           int displaySize, double x, double y) {
-
+    private void addEnemy(Monsters monster, int uniqueId, double x, double y, int displaySize) {
+        if (defeatedEnemies[currentMapIndex][uniqueId]) return;
         ImageView view = new ImageView(context);
+        view.setLayoutParams(new FrameLayout.LayoutParams(displaySize, displaySize));
+        view.setX((float) x); view.setY((float) y);
 
-        // Configura dimensões e posição
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(displaySize, displaySize);
-        view.setLayoutParams(params);
-        view.setX((float) x);
-        view.setY((float) y);
-
-        return view;
-    }
-
-    private void storeEnemyProperties(ImageView view, int uniqueId,
-                                      int spriteSize, int displaySize, Monsters monster) {
         EnemyData data = new EnemyData();
         data.mapId = uniqueId;
-        data.spriteSize = spriteSize;
         data.displaySize = displaySize;
         
-        // Carrega a Spritesheet do monstro
-        Bitmap fullSheet = BitmapFactory.decodeResource(context.getResources(), monster.getImageResId());
-        data.spriteSheet = fullSheet;
+        // Pré-corta a spritesheet para evitar lag no update
+        Bitmap sheet = BitmapFactory.decodeResource(context.getResources(), monster.getImageResId());
+        if (sheet != null) {
+            data.frames = new Bitmap[4][4]; // 4 direções, 4 frames
+            int fw = sheet.getWidth() / 4;
+            int fh = sheet.getHeight() / 4;
+            for (int r = 0; r < 4; r++) {
+                for (int c = 0; c < 4; c++) {
+                    data.frames[r][c] = Bitmap.createBitmap(sheet, c * fw, r * fh, fw, fh);
+                }
+            }
+            sheet.recycle();
+        }
 
         view.setTag(data);
+        monsters.add(monster);
+        views.add(view);
+        gameRoot.addView(view);
     }
 
-    // Classe auxiliar para guardar as propriedades
     private static class EnemyData {
-        int mapId;
-        double dirX = 1.0;
-        double dirY = 0.0;
+        int mapId, displaySize;
+        double dirX = 1.0, dirY = 0.0;
         long lastAiChange = 0;
-        int spriteSize;
-        int displaySize;
-        Bitmap spriteSheet;
+        Bitmap[][] frames;
     }
 
-    // =========================================================================
-    // FRAME UPDATE — Movimento, Animação e Colisão
-    // =========================================================================
-
-    public int update(double playerX, double playerY, int enemyFrame) {
-        java.util.Random random = new java.util.Random();
-
+    public int update(double playerX, double playerY, int frameIndex) {
+        java.util.Random rand = new java.util.Random();
         for (int i = 0; i < views.size(); i++) {
             ImageView view = views.get(i);
             EnemyData data = (EnemyData) view.getTag();
 
-            int displaySize = data.displaySize;
-
-            // ── IA: Movimento Aleatório ──────────────────────────────────
-            if (System.currentTimeMillis() - data.lastAiChange > 2000) { // Muda a cada 2 segundos
-                int action = random.nextInt(5); // 0: Parado, 1: Esquerda, 2: Direita, 3: Cima, 4: Baixo
-                switch (action) {
-                    case 0: data.dirX = 0; data.dirY = 0; break;
-                    case 1: data.dirX = -1.5; data.dirY = 0; break;
-                    case 2: data.dirX = 1.5; data.dirY = 0; break;
-                    case 3: data.dirX = 0; data.dirY = -1.5; break;
-                    case 4: data.dirX = 0; data.dirY = 1.5; break;
-                }
+            if (System.currentTimeMillis() - data.lastAiChange > 2000) {
+                int act = rand.nextInt(5);
+                data.dirX = (act == 1) ? -1.5 : (act == 2) ? 1.5 : 0;
+                data.dirY = (act == 3) ? -1.5 : (act == 4) ? 1.5 : 0;
                 data.lastAiChange = System.currentTimeMillis();
             }
 
-            // ── Movimento ────────────────────────────────────────────────
-            double newX = view.getX() + data.dirX;
-            double newY = view.getY() + data.dirY;
+            view.setX((float) (view.getX() + data.dirX));
+            view.setY((float) (view.getY() + data.dirY));
 
-            // ── Colisão com Barreiras Invisíveis (Goblins ficam presos no caminho) ────────
-            float limiteEsquerdo = (float) (screenW * 0.20f);
-            float limiteDireito = (float) (screenW * 0.80f - displaySize);
-            float limiteSuperior = (float) (screenH * 0.10f); // Não sobe até a borda de transição
-            float limiteInferior = (float) (screenH * 0.85f - displaySize); // Não desce até a borda de transição
-
-            if (newX < limiteEsquerdo) { 
-                newX = limiteEsquerdo; 
-                data.dirX = Math.abs(data.dirX); // Vai para a direita
-            }
-            if (newX > limiteDireito) { 
-                newX = limiteDireito; 
-                data.dirX = -Math.abs(data.dirX); // Vai para a esquerda
-            }
-            if (newY < limiteSuperior) { 
-                newY = limiteSuperior; 
-                data.dirY = Math.abs(data.dirY); // Vai para baixo
-            }
-            if (newY > limiteInferior) { 
-                newY = limiteInferior; 
-                data.dirY = -Math.abs(data.dirY); // Vai para cima
+            // Animação Ultra-Rápida usando cache
+            if (data.frames != null) {
+                int row = (data.dirY < 0) ? 3 : (data.dirX < 0) ? 1 : (data.dirX > 0) ? 2 : 0;
+                view.setImageBitmap(data.frames[row][frameIndex % 4]);
             }
 
-            view.setX((float) newX);
-            view.setY((float) newY);
-
-            // ── Animação: Recorte da Spritesheet ───────
-            if (data.spriteSheet != null) {
-                int directionRow = 0; // Baixo
-                if (data.dirY < 0) directionRow = 3;      // Cima
-                else if (data.dirX < 0) directionRow = 1; // Esquerda
-                else if (data.dirX > 0) directionRow = 2; // Direita
-                
-                int frameW = data.spriteSheet.getWidth() / 4;
-                int frameH = data.spriteSheet.getHeight() / 4;
-
-                int srcX = enemyFrame * frameW;
-                int srcY = directionRow * frameH;
-
-                Bitmap frameBitmap = Bitmap.createBitmap(data.spriteSheet, srcX, srcY, frameW, frameH);
-                view.setImageBitmap(frameBitmap);
-            }
-
-            // ── Verificação de colisão ──
-            double playerCenterX = playerX + (displaySize / 2.0);
-            double playerCenterY = playerY + (displaySize / 2.0);
-            double enemyCenterX = newX + (displaySize / 2.0);
-            double enemyCenterY = newY + (displaySize / 2.0);
-
-            double dx = playerCenterX - enemyCenterX;
-            double dy = playerCenterY - enemyCenterY;
-            double distanceSquared = dx * dx + dy * dy;
-            
-            // Raio de colisão (ajustado para ser mais sensível quando se "encostam")
-            double collisionDistance = displaySize * 0.7; 
-            double collisionRadiusSquared = collisionDistance * collisionDistance;
-
-            if (distanceSquared < collisionRadiusSquared) {
-                return i;
-            }
+            // Colisão simplificada e eficiente
+            if (Math.hypot(playerX - view.getX(), playerY - view.getY()) < data.displaySize * 0.7) return i;
         }
-
         return -1;
     }
 
-    // =========================================================================
-    // ENEMY REMOVAL E GETTERS
-    // =========================================================================
-
     public void removeEnemy(int index) {
         if (index < 0 || index >= views.size()) return;
-
-        ImageView view = views.get(index);
-        EnemyData data = (EnemyData) view.getTag();
-
-        if (data != null) {
-            defeatedEnemies[currentMapIndex][data.mapId] = true;
-        }
-
-        gameRoot.removeView(view);
-        views.remove(index);
-        monsters.remove(index);
+        defeatedEnemies[currentMapIndex][((EnemyData)views.get(index).getTag()).mapId] = true;
+        gameRoot.removeView(views.get(index));
+        views.remove(index); monsters.remove(index);
     }
-
-    public Monsters getMonstro(int index) { return monsters.get(index); }
-    public ImageView getView(int index) { return views.get(index); }
-    public boolean isEmpty() { return views.isEmpty(); }
+    public Monsters getMonstro(int i) { return monsters.get(i); }
 }

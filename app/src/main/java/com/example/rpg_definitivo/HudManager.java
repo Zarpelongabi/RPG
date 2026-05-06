@@ -3,47 +3,55 @@ package com.example.rpg_definitivo;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.SparseArray;
 
+/**
+ * Gerenciador de HUD de Alta Performance.
+ * Utiliza cache de frames para evitar alocação de memória em tempo de execução.
+ */
 public class HudManager {
-    public static final int FRAME_WIDTH = 385;
-    public static final int FRAME_HEIGHT = 188;
+    private static final SparseArray<Bitmap[]> frameCache = new SparseArray<>();
 
-    /**
-     * Retorna o frame da HUD baseado na vida e no XP.
-     * Escolhe a imagem correta (100hp, 75hp, etc) e recorta o frame de XP (0%, 25%, 50%, 75%, 100%).
-     */
     public static Bitmap getHudFrame(Context context, int hp, int maxHp, int xp, int maxXp) {
-        float hpPercent = (float) hp / maxHp;
-        float xpPercent = (maxXp > 0) ? (float) xp / maxXp : 0;
+        float hpPct = (float) hp / maxHp;
+        float xpPct = (maxXp > 0) ? (float) xp / maxXp : 0;
 
-        // 1. Escolhe qual recurso de imagem carregar baseado no HP
-        int resId;
-        if (hpPercent >= 0.875f) resId = R.drawable.hud_100hp;
-        else if (hpPercent >= 0.625f) resId = R.drawable.hud_75hp;
-        else if (hpPercent >= 0.375f) resId = R.drawable.hud_50hp;
-        else if (hpPercent >= 0.125f) resId = R.drawable.hud_25hp;
-        else resId = R.drawable.hud_0hp;
+        // Seleção de Spritesheet baseada no estado de saúde
+        int resId = R.drawable.hud_100hp;
+        if (hpPct <= 0) resId = R.drawable.hud_0hp;
+        else if (hpPct < 0.20f) resId = R.drawable.hud_25hp;
+        else if (hpPct < 0.45f) resId = R.drawable.hud_50hp;
+        else if (hpPct < 0.70f) resId = R.drawable.hud_75hp;
 
-        Bitmap sheet = BitmapFactory.decodeResource(context.getResources(), resId);
-        if (sheet == null) return null;
+        // Seleção de Frame baseado no progresso de XP (0-4)
+        int xpFrame = (xpPct < 0.15f) ? 0 : (xpPct < 0.35f) ? 1 : (xpPct < 0.60f) ? 2 : (xpPct < 0.85f) ? 3 : 4;
 
-        // 2. Escolhe o índice do sprite baseado no XP (0 a 4)
-        int xpIndex;
-        if (xpPercent < 0.125f) xpIndex = 0;      // 0%
-        else if (xpPercent < 0.375f) xpIndex = 1; // 25%
-        else if (xpPercent < 0.625f) xpIndex = 2; // 50%
-        else if (xpPercent < 0.875f) xpIndex = 3; // 75%
-        else xpIndex = 4;                         // 100%
+        return getFromCache(context, resId, xpFrame);
+    }
 
-        // 3. Calcula o recorte (cada sheet tem 5 sprites horizontalmente)
-        int actualFrameWidth = sheet.getWidth() / 5;
-        int actualFrameHeight = sheet.getHeight();
-        
-        int x = xpIndex * actualFrameWidth;
-        
-        // Garante que o recorte não saia dos limites
-        if (x + actualFrameWidth > sheet.getWidth()) x = sheet.getWidth() - actualFrameWidth;
+    private static Bitmap getFromCache(Context context, int resId, int index) {
+        Bitmap[] frames = frameCache.get(resId);
+        if (frames == null) {
+            Bitmap sheet = BitmapFactory.decodeResource(context.getResources(), resId);
+            if (sheet == null) return null;
+            
+            frames = new Bitmap[5];
+            int w = sheet.getWidth() / 5;
+            int h = sheet.getHeight();
+            for (int i = 0; i < 5; i++) {
+                frames[i] = Bitmap.createBitmap(sheet, i * w, 0, w, h);
+            }
+            frameCache.put(resId, frames);
+            sheet.recycle();
+        }
+        return frames[Math.min(index, 4)];
+    }
 
-        return Bitmap.createBitmap(sheet, x, 0, actualFrameWidth, actualFrameHeight);
+    public static void clearCache() {
+        for (int i = 0; i < frameCache.size(); i++) {
+            Bitmap[] frames = frameCache.valueAt(i);
+            for (Bitmap b : frames) if (b != null) b.recycle();
+        }
+        frameCache.clear();
     }
 }
