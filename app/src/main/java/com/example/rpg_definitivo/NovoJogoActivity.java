@@ -49,7 +49,6 @@ public class NovoJogoActivity extends Activity {
     // FIELDS — Estado do Jogo
     // =========================================================================
     public boolean isPaused = false;
-    public boolean lojaAberta = false;
     public boolean inventarioAberto = false;
     public boolean isTransitioning = false;
     private int rotaAtual = 1;
@@ -122,7 +121,7 @@ public class NovoJogoActivity extends Activity {
             enemyManager = new EnemyManager(this, findViewById(R.id.enemy_container), mainLayout.getWidth(), mainLayout.getHeight(), defeatedEnemies);
             enemyManager.configureForMap(rotaAtual - 1);
             npcManager = new com.example.rpg_definitivo.backend.managers.NPCManager(this, findViewById(R.id.enemy_container));
-            npcManager.setMerchantClickListener(v -> abrirLoja());
+            npcManager.setMerchantClickListener(v -> irParaCenaMerchant());
         });
         
         startGameLoop();
@@ -216,7 +215,7 @@ public class NovoJogoActivity extends Activity {
 
         btnAction.setOnClickListener(v -> {
             if (npcManager != null && npcManager.isNearMerchant(playerView.getX(), playerView.getY(), playerView.getWidth(), playerView.getHeight())) {
-                abrirLoja();
+                irParaCenaMerchant();
             }
         });
 
@@ -436,7 +435,7 @@ public class NovoJogoActivity extends Activity {
     private Runnable gameRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!isPaused && !inventarioAberto && !lojaAberta && !isTransitioning) {
+            if (!isPaused && !inventarioAberto && !isTransitioning) {
                 atualizarJogo();
             }
             // Agenda a próxima execução para manter os 60 FPS
@@ -525,7 +524,7 @@ public class NovoJogoActivity extends Activity {
 
         // --- ATUALIZAR INIMIGOS (Sempre, mesmo se o jogador estiver parado) ---
         if (npcManager != null) {
-            npcManager.update(rotaAtual, playerView.getX(), playerView.getY(), mainLayout.getWidth(), mainLayout.getHeight(), lojaAberta);
+            npcManager.update(rotaAtual, playerView.getX(), playerView.getY(), mainLayout.getWidth(), mainLayout.getHeight());
         }
 
         if (enemyManager != null) {
@@ -608,88 +607,19 @@ public class NovoJogoActivity extends Activity {
         dialog.show();
     }
 
-    private void abrirLoja() {
-        if (!npcManager.isNearMerchant(playerView.getX(), playerView.getY(), playerView.getWidth(), playerView.getHeight())) {
-            Toast.makeText(this, "Aproxime-se do Comerciante para negociar", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+    private void irParaCenaMerchant() {
+        if (isPaused || isTransitioning) return;
+        
         isPaused = true;
         resetMovement();
 
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_shop, null);
-        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
-                .setView(dialogView)
-                .create();
+        Intent intent = new Intent(this, MerchantActivity.class);
+        intent.putExtra("p_coins", playerCoins);
+        try {
+            intent.putExtra("inventory_json", inventory.toJSON().toString());
+        } catch (Exception e) {}
 
-        ImageView ivMerchant = dialogView.findViewById(R.id.iv_shop_merchant);
-        if (ivMerchant != null) {
-            ivMerchant.setImageBitmap(npcManager.getFrame(0)); // Sprite 1: Conversando
-        }
-
-        TextView tvCoins = dialogView.findViewById(R.id.tv_shop_coins);
-        tvCoins.setText("Suas Moedas: " + playerCoins);
-
-        LinearLayout layoutItems = dialogView.findViewById(R.id.layout_shop_items);
-        
-        com.example.rpg_definitivo.backend.models.Potion pocao = new com.example.rpg_definitivo.backend.models.Potion("Poção de Cura", 5, 1, 30);
-        com.example.rpg_definitivo.backend.models.Sword espada = new com.example.rpg_definitivo.backend.models.Sword("Espada Longa", 15, 12, "Comum", 1);
-        com.example.rpg_definitivo.backend.models.Sword katana = new com.example.rpg_definitivo.backend.models.Sword("Katana", 30, 10, "Rara", 1);
-        
-        adicionarBotaoCompra(layoutItems, pocao, tvCoins, ivMerchant);
-        adicionarBotaoCompra(layoutItems, espada, tvCoins, ivMerchant);
-        adicionarBotaoCompra(layoutItems, katana, tvCoins, ivMerchant);
-
-        dialogView.findViewById(R.id.btn_close_shop).setOnClickListener(v -> {
-            if (ivMerchant != null) {
-                ivMerchant.setImageBitmap(npcManager.getFrame(3)); // Sprite 4: Tchau
-                v.postDelayed(() -> {
-                    dialog.dismiss();
-                    isPaused = false;
-                }, 600);
-            } else {
-                dialog.dismiss();
-                isPaused = false;
-            }
-        });
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-        dialog.show();
-    }
-
-    private void adicionarBotaoCompra(LinearLayout layout, com.example.rpg_definitivo.backend.models.Item item, TextView tvCoins, ImageView ivMerchant) {
-        Button btnBuy = new Button(this);
-        btnBuy.setText("Comprar " + item.getName() + " (" + item.getValue() + " Moedas)");
-        btnBuy.setBackgroundResource(R.drawable.box_message);
-        btnBuy.setTextColor(android.graphics.Color.WHITE);
-        btnBuy.setOnClickListener(v -> {
-            // Ao clicar, mostra o item (Sprite 3 -> Index 2)
-            if (ivMerchant != null) ivMerchant.setImageBitmap(npcManager.getFrame(2));
-
-            if (playerCoins >= item.getValue()) {
-                if (inventory.addItem(item)) {
-                    playerCoins -= item.getValue();
-                    tvCoins.setText("Suas Moedas: " + playerCoins);
-                    
-                    // Sucesso: mostra o dinheiro (Sprite 2 -> Index 1)
-                    if (ivMerchant != null) {
-                        v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(1)), 300);
-                    }
-                    
-                    Toast.makeText(this, "Comprou: " + item.getName(), Toast.LENGTH_SHORT).show();
-                    updateHUD();
-                } else {
-                    Toast.makeText(this, "Inventário Cheio!", Toast.LENGTH_SHORT).show();
-                    if (ivMerchant != null) v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(0)), 500);
-                }
-            } else {
-                Toast.makeText(this, "Moedas Insuficientes!", Toast.LENGTH_SHORT).show();
-                if (ivMerchant != null) v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(0)), 500);
-            }
-        });
-        layout.addView(btnBuy);
+        startActivityForResult(intent, 200);
     }
 
     private int lastEnemyIndex = -1;
@@ -723,7 +653,7 @@ public class NovoJogoActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 100) {
-            // Se a BattleActivity devolver os status atualizados:
+            // ... (código existente da batalha)
             if (data != null) {
                 playerHp = data.getIntExtra("p_hp", playerHp);
                 playerMaxHp = data.getIntExtra("p_max_hp", playerMaxHp);
@@ -734,16 +664,22 @@ public class NovoJogoActivity extends Activity {
             }
 
             if (resultCode == RESULT_OK && lastEnemyIndex != -1) {
-                // Remove o inimigo apenas em caso de vitória
                 enemyManager.removeEnemy(lastEnemyIndex);
                 showLevelUpEffect();
             } else {
-                // Se fugiu ou perdeu, o inimigo continua no mapa. 
-                // Teletransportamos o jogador um pouco para trás para evitar colisão imediata.
                 afastarJogador();
-                Toast.makeText(this, "A batalha terminou.", Toast.LENGTH_SHORT).show();
             }
             lastEnemyIndex = -1;
+            isPaused = false;
+        } else if (requestCode == 200) {
+            if (resultCode == RESULT_OK && data != null) {
+                playerCoins = data.getIntExtra("p_coins", playerCoins);
+                String invJson = data.getStringExtra("inventory_json");
+                if (invJson != null) {
+                    inventory = com.example.rpg_definitivo.backend.managers.Inventory.fromJSON(invJson);
+                }
+                updateHUD();
+            }
             isPaused = false;
         }
     }
@@ -859,7 +795,7 @@ public class NovoJogoActivity extends Activity {
     }
 
     public void togglePause() {
-        if (lojaAberta || inventarioAberto || isTransitioning) return;
+        if (inventarioAberto || isTransitioning) return;
 
         isPaused = !isPaused;
 
