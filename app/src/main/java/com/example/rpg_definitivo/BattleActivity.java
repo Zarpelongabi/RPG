@@ -37,7 +37,7 @@ public class BattleActivity extends Activity {
     private Button btnAttack, btnRun, btnSkill, btnItem;
     private FrameLayout rootLayout;
 
-    private int playerMaxHp, playerHp, playerLevel, playerXp, xpToNextLevel;
+    private int playerMaxHp, playerHp, playerLevel, playerXp, xpToNextLevel, playerCoins;
     private int enemyMaxHp = 25, enemyHp = 25, enemyDamage = 6, enemyXpReward = 8;
     private int enemyResId;
 
@@ -50,6 +50,7 @@ public class BattleActivity extends Activity {
     private boolean isTyping = false;
     private String fullMessage = "";
     private String playerName = "HERÓI";
+    private com.example.rpg_definitivo.backend.models.Sword equippedSword;
     private final Handler handler = new Handler();
     private Runnable typingRunnable;
 
@@ -65,6 +66,8 @@ public class BattleActivity extends Activity {
         
         playerName = getIntent().getStringExtra("player_name");
         if (playerName == null || playerName.isEmpty()) playerName = "HERÓI";
+        
+        equippedSword = (com.example.rpg_definitivo.backend.models.Sword) getIntent().getSerializableExtra("equipped_sword");
 
         // Fade in inicial
         rootLayout.setAlpha(0f);
@@ -110,6 +113,7 @@ public class BattleActivity extends Activity {
         playerMaxHp = getIntent().getIntExtra("p_max_hp", 100);
         playerLevel = getIntent().getIntExtra("p_level", 1);
         playerXp = getIntent().getIntExtra("p_xp", 0);
+        playerCoins = getIntent().getIntExtra("p_coins", 0);
         xpToNextLevel = (int)(20 * Math.pow(1.5, playerLevel - 1));
 
         String name = getIntent().getStringExtra("enemy_name");
@@ -231,21 +235,35 @@ public class BattleActivity extends Activity {
                 .setInterpolator(new AccelerateInterpolator()).withEndAction(() -> {
             
             // Impacto
-            boolean crit = Math.random() < 0.15;
-            int danoBase = 8 + (playerLevel * 3) + (int)(Math.random() * 5);
-            int dano = isTest ? 0 : (crit ? danoBase * 2 : danoBase);
+            boolean critResult = false;
+            int danoResult;
+
+            if (equippedSword != null) {
+                danoResult = equippedSword.calculateDamage();
+                if (danoResult >= (equippedSword.getDamage() * 1.5)) critResult = true;
+                danoResult += (playerLevel * 2);
+            } else {
+                critResult = Math.random() < 0.15;
+                int danoBase = 8 + (playerLevel * 3) + (int)(Math.random() * 5);
+                danoResult = critResult ? danoBase * 2 : danoBase;
+            }
+
+            if (isTest) danoResult = 0;
+
+            final int finalDano = danoResult;
+            final boolean finalCrit = critResult;
             
-            aplicarEfeitosImpacto(ivEnemy, crit);
-            exibirDanoFlutuante(dano, ivEnemy, crit, false);
+            aplicarEfeitosImpacto(ivEnemy, finalCrit);
+            exibirDanoFlutuante(finalDano, ivEnemy, finalCrit, false);
             
-            enemyHp = Math.max(0, enemyHp - dano);
+            enemyHp = Math.max(0, enemyHp - finalDano);
             ObjectAnimator.ofInt(pbEnemyHp, "progress", enemyHp).setDuration(400).start();
 
             // Retorno
             ivPlayer.animate().translationX(0).scaleX(1f).scaleY(1f).setDuration(300)
                     .setInterpolator(new DecelerateInterpolator()).withEndAction(() -> {
                 isPlayerAnimatingFrames = false; // Para de animar o spritesheet
-                escreverMensagem(crit ? "GOLPE CRÍTICO! " + dano + " de dano!" : "Você causou " + dano + " de dano.");
+                escreverMensagem(finalCrit ? "GOLPE CRÍTICO! " + finalDano + " de dano!" : "Você causou " + finalDano + " de dano.");
                 handler.postDelayed(() -> { if (enemyHp <= 0) vitoria(); else turnoInimigo(); }, 1500);
             }).start();
         }).start();
@@ -305,6 +323,7 @@ public class BattleActivity extends Activity {
         ivEnemy.animate().alpha(0).scaleX(0).scaleY(0).setDuration(800).start();
         handler.postDelayed(() -> {
             playerXp += enemyXpReward;
+            playerCoins += 1; // Recompensa de 1 moeda por vitória
             boolean subiu = false;
             while (playerXp >= xpToNextLevel) {
                 playerXp -= xpToNextLevel; playerLevel++; playerMaxHp += 20; playerHp = playerMaxHp;
@@ -410,5 +429,15 @@ public class BattleActivity extends Activity {
         gameOverContainer.animate().alpha(1f).setDuration(2000).start();
         ivPlayer.animate().alpha(0).setDuration(2000).start();
     }
-    private void encerrarBatalha(int r) { HudManager.clearCache(); Intent d = new Intent(); d.putExtra("p_hp", playerHp); d.putExtra("p_max_hp", playerMaxHp); d.putExtra("p_level", playerLevel); d.putExtra("p_xp", playerXp); setResult(r, d); finish(); }
+    private void encerrarBatalha(int r) { 
+        HudManager.clearCache(); 
+        Intent d = new Intent(); 
+        d.putExtra("p_hp", playerHp); 
+        d.putExtra("p_max_hp", playerMaxHp); 
+        d.putExtra("p_level", playerLevel); 
+        d.putExtra("p_xp", playerXp); 
+        d.putExtra("p_coins", playerCoins); 
+        setResult(r, d); 
+        finish(); 
+    }
 }

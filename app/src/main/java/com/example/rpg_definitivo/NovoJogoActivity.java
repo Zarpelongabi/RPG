@@ -10,6 +10,7 @@ import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Intent;
@@ -25,6 +26,7 @@ public class NovoJogoActivity extends Activity {
     // =========================================================================
     private PlayerView playerView;
     private ImageView ivHpFrame;
+    private TextView tvHudCoins;
     private ImageView mapView;
     private FrameLayout mainLayout;
 
@@ -35,7 +37,7 @@ public class NovoJogoActivity extends Activity {
     private View btnAction;
     private View btnPause;
     private View pauseMenuContainer;
-    private TextView tvContinuar, tvSalvar, tvSairJogo;
+    private TextView tvContinuar, tvSalvar, tvSairJogo, tvMochila;
     private TextView tvLevelUpToast;
 
     // =========================================================================
@@ -58,8 +60,11 @@ public class NovoJogoActivity extends Activity {
     private int playerLevel = 1;
     private int playerXp = 0;
     private int playerCoins = 0;
+    private com.example.rpg_definitivo.backend.models.Sword equippedSword;
+    private com.example.rpg_definitivo.backend.managers.Inventory inventory = new com.example.rpg_definitivo.backend.managers.Inventory();
 
-    private EnemyManager enemyManager;
+    private com.example.rpg_definitivo.backend.managers.EnemyManager enemyManager;
+    private com.example.rpg_definitivo.backend.managers.NPCManager npcManager;
     private int enemyFrame = 0;
     private long lastEnemyFrameTime = 0;
     private boolean[][] defeatedEnemies = new boolean[10][10];
@@ -116,6 +121,8 @@ public class NovoJogoActivity extends Activity {
         mainLayout.post(() -> {
             enemyManager = new EnemyManager(this, findViewById(R.id.enemy_container), mainLayout.getWidth(), mainLayout.getHeight(), defeatedEnemies);
             enemyManager.configureForMap(rotaAtual - 1);
+            npcManager = new com.example.rpg_definitivo.backend.managers.NPCManager(this, findViewById(R.id.enemy_container));
+            npcManager.setMerchantClickListener(v -> abrirLoja());
         });
         
         startGameLoop();
@@ -160,6 +167,12 @@ public class NovoJogoActivity extends Activity {
             playerLevel = slot.level;
             playerXp = slot.xp;
             playerCoins = slot.coins;
+            inventory = com.example.rpg_definitivo.backend.managers.Inventory.fromJSON(slot.inventoryJson);
+            if (slot.equippedSwordJson != null && !slot.equippedSwordJson.isEmpty() && !slot.equippedSwordJson.equals("{}")) {
+                try {
+                    equippedSword = (com.example.rpg_definitivo.backend.models.Sword) com.example.rpg_definitivo.backend.models.Item.fromJSON(new org.json.JSONObject(slot.equippedSwordJson));
+                } catch (Exception e) { e.printStackTrace(); }
+            }
             if (slot.defeatedEnemies != null) {
                 defeatedEnemies = slot.defeatedEnemies;
             }
@@ -183,6 +196,10 @@ public class NovoJogoActivity extends Activity {
         if (hudFrame != null) {
             ivHpFrame.setImageBitmap(hudFrame);
         }
+
+        if (tvHudCoins != null) {
+            tvHudCoins.setText(String.valueOf(playerCoins));
+        }
     }
 
     private void linkarInterface() {
@@ -197,17 +214,30 @@ public class NovoJogoActivity extends Activity {
         btnAction = findViewById(R.id.btn_action);
         btnPause = findViewById(R.id.btn_pause);
 
+        btnAction.setOnClickListener(v -> {
+            if (npcManager != null && npcManager.isNearMerchant(playerView.getX(), playerView.getY(), playerView.getWidth(), playerView.getHeight())) {
+                abrirLoja();
+            }
+        });
+
         pauseMenuContainer = findViewById(R.id.pause_menu_container);
         tvContinuar = findViewById(R.id.tv_continuar);
         tvSalvar = findViewById(R.id.tv_salvar);
         tvSairJogo = findViewById(R.id.tv_sair_jogo);
+        tvMochila = findViewById(R.id.tv_mochila);
         tvLevelUpToast = findViewById(R.id.tv_level_up_toast);
         ivHpFrame = findViewById(R.id.iv_map_hp_frame);
+        tvHudCoins = findViewById(R.id.tv_hud_coins);
 
         // Ação do botão de Pause/Menu
         btnPause.setOnClickListener(v -> togglePause());
 
         tvContinuar.setOnClickListener(v -> togglePause());
+        
+        tvMochila.setOnClickListener(v -> {
+            togglePause();
+            abrirMochila();
+        });
 
         tvSalvar.setOnClickListener(v -> {
             showSaveDialog();
@@ -269,8 +299,15 @@ public class NovoJogoActivity extends Activity {
             }
             
             // Agora o currentSlotName (que é o nome do personagem) é passado separadamente do nome do Save
+            String invJson = "{}";
+            String swordJson = "";
+            try { 
+                invJson = inventory.toJSON().toString(); 
+                if (equippedSword != null) swordJson = equippedSword.toJSON().toString();
+            } catch (Exception e) {}
+            
             SaveSystem.salvarJogo(this, currentSlotId, saveName, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual, 
-                                 playerHp, playerMaxHp, playerLevel, playerXp, playerCoins, defeatedEnemies);
+                                 playerHp, playerMaxHp, playerLevel, playerXp, playerCoins, defeatedEnemies, invJson, swordJson);
             
             Toast.makeText(this, "Jornada Salva: " + saveName, Toast.LENGTH_SHORT).show();
             cursorHandler.removeCallbacks(cursorRunnable);
@@ -487,6 +524,10 @@ public class NovoJogoActivity extends Activity {
         }
 
         // --- ATUALIZAR INIMIGOS (Sempre, mesmo se o jogador estiver parado) ---
+        if (npcManager != null) {
+            npcManager.update(rotaAtual, playerView.getX(), playerView.getY(), mainLayout.getWidth(), mainLayout.getHeight(), lojaAberta);
+        }
+
         if (enemyManager != null) {
             // Atualiza frame da animação do inimigo a cada 150ms
             if (System.currentTimeMillis() - lastEnemyFrameTime > 150) {
@@ -500,6 +541,155 @@ public class NovoJogoActivity extends Activity {
                 iniciarBatalha(collisionIndex);
             }
         }
+    }
+
+    private void abrirMochila() {
+        isPaused = true;
+        resetMovement();
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_inventory, null);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        TextView tvSpace = dialogView.findViewById(R.id.tv_inventory_space);
+        tvSpace.setText("Espaço: " + inventory.getUsedSpace() + "/" + inventory.getMaxSpace());
+
+        LinearLayout layoutItems = dialogView.findViewById(R.id.layout_inventory_items);
+        layoutItems.removeAllViews();
+
+        for (com.example.rpg_definitivo.backend.models.Item item : inventory.getItems()) {
+            Button btnItem = new Button(this);
+            String desc = item.getName();
+            if (item instanceof com.example.rpg_definitivo.backend.models.Potion) {
+                desc += " (Cura: " + ((com.example.rpg_definitivo.backend.models.Potion) item).getHealedLife() + " HP)";
+            } else if (item instanceof com.example.rpg_definitivo.backend.models.Sword) {
+                desc += " (Dano: " + ((com.example.rpg_definitivo.backend.models.Sword) item).getDamage() + ")";
+                if (item == equippedSword) desc += " [EQUIPADO]";
+            }
+            btnItem.setText(desc);
+            btnItem.setBackgroundResource(R.drawable.box_message);
+            btnItem.setTextColor(android.graphics.Color.WHITE);
+            btnItem.setAllCaps(false);
+            btnItem.setOnClickListener(v -> {
+                if (item instanceof com.example.rpg_definitivo.backend.models.Potion) {
+                    com.example.rpg_definitivo.backend.models.Potion p = (com.example.rpg_definitivo.backend.models.Potion) item;
+                    playerHp = Math.min(playerMaxHp, playerHp + p.getHealedLife());
+                    inventory.removeItem(item);
+                    updateHUD();
+                    Toast.makeText(this, "Usou " + item.getName(), Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    isPaused = false;
+                } else if (item instanceof com.example.rpg_definitivo.backend.models.Sword) {
+                    equippedSword = (com.example.rpg_definitivo.backend.models.Sword) item;
+                    Toast.makeText(this, "Equipou " + item.getName(), Toast.LENGTH_SHORT).show();
+                    abrirMochila(); // Recarrega para mostrar o [EQUIPADO]
+                }
+            });
+            layoutItems.addView(btnItem);
+        }
+
+        if (inventory.getItems().isEmpty()) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("Mochila Vazia");
+            tvEmpty.setTextColor(android.graphics.Color.GRAY);
+            tvEmpty.setGravity(android.view.Gravity.CENTER);
+            layoutItems.addView(tvEmpty);
+        }
+
+        dialogView.findViewById(R.id.btn_close_inventory).setOnClickListener(v -> {
+            dialog.dismiss();
+            isPaused = false;
+        });
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialog.show();
+    }
+
+    private void abrirLoja() {
+        if (!npcManager.isNearMerchant(playerView.getX(), playerView.getY(), playerView.getWidth(), playerView.getHeight())) {
+            Toast.makeText(this, "Aproxime-se do Comerciante para negociar", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        isPaused = true;
+        resetMovement();
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_shop, null);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        ImageView ivMerchant = dialogView.findViewById(R.id.iv_shop_merchant);
+        if (ivMerchant != null) {
+            ivMerchant.setImageBitmap(npcManager.getFrame(0)); // Sprite 1: Conversando
+        }
+
+        TextView tvCoins = dialogView.findViewById(R.id.tv_shop_coins);
+        tvCoins.setText("Suas Moedas: " + playerCoins);
+
+        LinearLayout layoutItems = dialogView.findViewById(R.id.layout_shop_items);
+        
+        com.example.rpg_definitivo.backend.models.Potion pocao = new com.example.rpg_definitivo.backend.models.Potion("Poção de Cura", 5, 1, 30);
+        com.example.rpg_definitivo.backend.models.Sword espada = new com.example.rpg_definitivo.backend.models.Sword("Espada Longa", 15, 12, "Comum", 1);
+        com.example.rpg_definitivo.backend.models.Sword katana = new com.example.rpg_definitivo.backend.models.Sword("Katana", 30, 10, "Rara", 1);
+        
+        adicionarBotaoCompra(layoutItems, pocao, tvCoins, ivMerchant);
+        adicionarBotaoCompra(layoutItems, espada, tvCoins, ivMerchant);
+        adicionarBotaoCompra(layoutItems, katana, tvCoins, ivMerchant);
+
+        dialogView.findViewById(R.id.btn_close_shop).setOnClickListener(v -> {
+            if (ivMerchant != null) {
+                ivMerchant.setImageBitmap(npcManager.getFrame(3)); // Sprite 4: Tchau
+                v.postDelayed(() -> {
+                    dialog.dismiss();
+                    isPaused = false;
+                }, 600);
+            } else {
+                dialog.dismiss();
+                isPaused = false;
+            }
+        });
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialog.show();
+    }
+
+    private void adicionarBotaoCompra(LinearLayout layout, com.example.rpg_definitivo.backend.models.Item item, TextView tvCoins, ImageView ivMerchant) {
+        Button btnBuy = new Button(this);
+        btnBuy.setText("Comprar " + item.getName() + " (" + item.getValue() + " Moedas)");
+        btnBuy.setBackgroundResource(R.drawable.box_message);
+        btnBuy.setTextColor(android.graphics.Color.WHITE);
+        btnBuy.setOnClickListener(v -> {
+            // Ao clicar, mostra o item (Sprite 3 -> Index 2)
+            if (ivMerchant != null) ivMerchant.setImageBitmap(npcManager.getFrame(2));
+
+            if (playerCoins >= item.getValue()) {
+                if (inventory.addItem(item)) {
+                    playerCoins -= item.getValue();
+                    tvCoins.setText("Suas Moedas: " + playerCoins);
+                    
+                    // Sucesso: mostra o dinheiro (Sprite 2 -> Index 1)
+                    if (ivMerchant != null) {
+                        v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(1)), 300);
+                    }
+                    
+                    Toast.makeText(this, "Comprou: " + item.getName(), Toast.LENGTH_SHORT).show();
+                    updateHUD();
+                } else {
+                    Toast.makeText(this, "Inventário Cheio!", Toast.LENGTH_SHORT).show();
+                    if (ivMerchant != null) v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(0)), 500);
+                }
+            } else {
+                Toast.makeText(this, "Moedas Insuficientes!", Toast.LENGTH_SHORT).show();
+                if (ivMerchant != null) v.postDelayed(() -> ivMerchant.setImageBitmap(npcManager.getFrame(0)), 500);
+            }
+        });
+        layout.addView(btnBuy);
     }
 
     private int lastEnemyIndex = -1;
@@ -518,6 +708,7 @@ public class NovoJogoActivity extends Activity {
         intent.putExtra("enemy_name", monstro.getName());
         intent.putExtra("enemy_res", monstro.getBattleImageResId());
         intent.putExtra("player_name", currentSlotName);
+        if (equippedSword != null) intent.putExtra("equipped_sword", equippedSword);
         
         // Passar status atuais do jogador para a batalha
         intent.putExtra("p_hp", playerHp);
@@ -538,7 +729,7 @@ public class NovoJogoActivity extends Activity {
                 playerMaxHp = data.getIntExtra("p_max_hp", playerMaxHp);
                 playerLevel = data.getIntExtra("p_level", playerLevel);
                 playerXp = data.getIntExtra("p_xp", playerXp);
-                // Moedas podem ser adicionadas aqui também se BattleActivity as gerenciar
+                playerCoins = data.getIntExtra("p_coins", playerCoins);
                 updateHUD();
             }
 

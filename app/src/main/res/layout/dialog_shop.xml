@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/box_message"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="LOJA DO MERCADOR"
+        android:textColor="#D4AF37"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="10dp"/>
+
+    <ImageView
+        android:id="@+id/iv_shop_merchant"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginBottom="10dp"
+        android:scaleType="fitCenter"/>
+
+    <TextView
+        android:id="@+id/tv_shop_coins"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Suas Moedas: 0"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:layout_marginBottom="10dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:id="@+id/layout_shop_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"/>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/btn_close_shop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SAIR"
+        android:backgroundTint="#8B0000"
+        android:textColor="#FFFFFF"/>
+</LinearLayout>

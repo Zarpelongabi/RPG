@@ -26,8 +26,10 @@ public class SaveSystem {
         public int xp;
         public int coins;
         public boolean[][] defeatedEnemies;
+        public String inventoryJson; // Guardamos o inventário como String JSON
+        public String equippedSwordJson;
 
-        public SaveSlot(String id, String name, String playerName, float playerX, float playerY, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
+        public SaveSlot(String id, String name, String playerName, float playerX, float playerY, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies, String inventoryJson, String equippedSwordJson) {
             this.id = id;
             this.name = name;
             this.playerName = playerName;
@@ -40,6 +42,8 @@ public class SaveSystem {
             this.xp = xp;
             this.coins = coins;
             this.defeatedEnemies = defeatedEnemies;
+            this.inventoryJson = inventoryJson;
+            this.equippedSwordJson = equippedSwordJson;
         }
 
         public JSONObject toInterface() throws JSONException {
@@ -55,6 +59,8 @@ public class SaveSystem {
             json.put("level", level);
             json.put("xp", xp);
             json.put("coins", coins);
+            json.put("inventory", inventoryJson);
+            json.put("equippedSword", equippedSwordJson);
             
             JSONArray defeatedArray = new JSONArray();
             if (defeatedEnemies != null) {
@@ -95,16 +101,18 @@ public class SaveSystem {
                 json.optInt("level", 1),
                 json.optInt("xp", 0),
                 json.optInt("coins", 0),
-                defeated
+                defeated,
+                json.optString("inventory", "{}"),
+                json.optString("equippedSword", "")
             );
         }
     }
 
-    public static void salvarJogo(Context context, String slotId, String slotName, String playerName, float x, float y, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
+    public static void salvarJogo(Context context, String slotId, String slotName, String playerName, float x, float y, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies, String inventoryJson, String equippedSwordJson) {
         List<SaveSlot> slots = carregarTodosSaves(context);
         boolean found = false;
 
-        SaveSlot newSlot = new SaveSlot(slotId, slotName, playerName, x, y, rota, hp, maxHp, level, xp, coins, defeatedEnemies);
+        SaveSlot newSlot = new SaveSlot(slotId, slotName, playerName, x, y, rota, hp, maxHp, level, xp, coins, defeatedEnemies, inventoryJson, equippedSwordJson);
 
         for (int i = 0; i < slots.size(); i++) {
             if (slots.get(i).id.equals(slotId)) {

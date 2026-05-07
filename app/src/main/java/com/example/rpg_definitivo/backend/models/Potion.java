@@ -1,42 +1,26 @@
-package com.example.rpg_definitivo.backend.models; // Pacote atualizado para o Android
+package com.example.rpg_definitivo.backend.models;
 
-/**
- * ============================================================
- * Potion.java — Item consumível de cura
- * ============================================================
- */
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Potion extends Item {
-
-    // =========================================================================
-    // FIELDS
-    // =========================================================================
-
     private int healedLife;
 
-    // =========================================================================
-    // CONSTRUCTOR
-    // =========================================================================
-
     public Potion(String name, int value, int size, int healedLife) {
-        super(name, value, size);   // Repassa nome, valor e tamanho para Item
+        super(name, value, size);
         this.healedLife = healedLife;
     }
 
-    // =========================================================================
-    // GETTER
-    // =========================================================================
-
-    public int getHealedLife() {
-        return healedLife;
+    @Override
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = super.toJSON();
+        json.put("healedLife", healedLife);
+        return json;
     }
 
-    // =========================================================================
-    // SETTER (com validação)
-    // =========================================================================
+    public int getHealedLife() { return healedLife; }
 
     public void setHealedLife(int healedLife) {
-        if (healedLife > 0) {
-            this.healedLife = healedLife;
-        }
+        if (healedLife > 0) this.healedLife = healedLife;
     }
 }
