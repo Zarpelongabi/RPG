@@ -24,21 +24,19 @@ public class NPCManager {
 
     private void setupMerchant() {
         merchantView = new ImageView(context);
-        // Tamanho maior para facilitar visualização e clique
-        int size = (int) (180 * context.getResources().getDisplayMetrics().density);
-        merchantView.setLayoutParams(new FrameLayout.LayoutParams(size, size));
+        // Tamanho maior para o mercador/balcão no mapa
+        int sizeW = (int) (280 * context.getResources().getDisplayMetrics().density);
+        int sizeH = (int) (200 * context.getResources().getDisplayMetrics().density);
+        merchantView.setLayoutParams(new FrameLayout.LayoutParams(sizeW, sizeH));
         merchantView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         
         Bitmap sheet = BitmapFactory.decodeResource(context.getResources(), R.drawable.npc_vendedor);
         if (sheet != null) {
-            merchantFrames = new Bitmap[4];
-            int fw = sheet.getWidth() / 4;
-            int fh = sheet.getHeight();
-            for (int i = 0; i < 4; i++) {
-                // Slicing preciso
-                merchantFrames[i] = Bitmap.createBitmap(sheet, i * fw, 0, fw, fh);
-            }
-            merchantView.setImageBitmap(merchantFrames[0]);
+            // Para o mapa, usamos a imagem completa do vendedor/balcão 
+            // sem fatiar, para evitar que o stand apareça cortado.
+            merchantFrames = new Bitmap[1];
+            merchantFrames[0] = sheet;
+            merchantView.setImageBitmap(sheet);
         }
         
         merchantView.setVisibility(View.GONE);
@@ -49,7 +47,7 @@ public class NPCManager {
         isSetup = true;
     }
 
-    public void update(int rota, float playerX, float playerY, int screenW, int screenH, boolean lojaAberta) {
+    public void update(int rota, float playerX, float playerY, int screenW, int screenH) {
         if (rota == 4) {
             if (merchantView.getVisibility() == View.GONE) {
                 merchantView.setVisibility(View.VISIBLE);
@@ -57,22 +55,17 @@ public class NPCManager {
             }
             
             if (screenW > 0 && screenH > 0) {
-                int size = (int) (180 * context.getResources().getDisplayMetrics().density);
-                // Centralizado horizontalmente na estrada
-                float targetX = (screenW * 0.5f) - (size / 2f);
-                // Posicionado na parte superior da estrada, mas alcançável
-                float targetY = (screenH * 0.25f); 
+                int sizeW = (int) (280 * context.getResources().getDisplayMetrics().density);
+                int sizeH = (int) (200 * context.getResources().getDisplayMetrics().density);
+                // Posicionado levemente para a direita na estrada
+                float targetX = (screenW * 0.65f) - (sizeW / 2f);
+                // Posicionado na parte superior da estrada
+                float targetY = (screenH * 0.22f); 
                 
                 if (Math.abs(merchantView.getX() - targetX) > 5) {
                     merchantView.setX(targetX);
                     merchantView.setY(targetY);
                 }
-            }
-
-            // Se a loja NÃO está aberta, garante que ele está no frame inicial (conversando)
-            // Isso evita que ele fique "travado" em outros frames se a loja fechou abruptamente
-            if (!lojaAberta && merchantFrames != null) {
-                merchantView.setImageBitmap(merchantFrames[0]);
             }
             
             merchantView.bringToFront();
@@ -85,16 +78,17 @@ public class NPCManager {
         if (merchantFrames != null && index >= 0 && index < merchantFrames.length) {
             return merchantFrames[index];
         }
-        return (merchantFrames != null) ? merchantFrames[0] : null;
+        return (merchantFrames != null && merchantFrames.length > 0) ? merchantFrames[0] : null;
     }
 
     public boolean isNearMerchant(float playerX, float playerY, float playerW, float playerH) {
         if (merchantView == null || merchantView.getVisibility() != View.VISIBLE) return false;
         
-        int mSize = (int) (180 * context.getResources().getDisplayMetrics().density);
+        int mSizeW = (int) (280 * context.getResources().getDisplayMetrics().density);
+        int mSizeH = (int) (200 * context.getResources().getDisplayMetrics().density);
         // Centro do mercador
-        float mx = merchantView.getX() + mSize / 2f;
-        float my = merchantView.getY() + mSize / 2f;
+        float mx = merchantView.getX() + mSizeW / 2f;
+        float my = merchantView.getY() + mSizeH / 2f;
         
         // Centro do jogador
         float px = playerX + playerW / 2f;
@@ -107,5 +101,11 @@ public class NPCManager {
 
     public void setMerchantClickListener(View.OnClickListener listener) {
         merchantView.setOnClickListener(listener);
+    }
+
+    public void removeMerchantView() {
+        if (container != null && merchantView != null) {
+            container.removeView(merchantView);
+        }
     }
 }

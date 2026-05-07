@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/merchant_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <ImageView
+        android:id="@+id/iv_merchant_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/battlebg2" />
+
+    <!-- Personagem Comerciante (Centralizado para Diálogo) -->
+    <ImageView
+        android:id="@+id/iv_merchant_sprite"
+        android:layout_width="300dp"
+        android:layout_height="350dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="120dp"
+        android:scaleType="fitCenter" />
+
+    <!-- Área da Loja (PvZ Style) -->
+    <RelativeLayout
+        android:id="@+id/layout_shop_area"
+        android:layout_width="500dp"
+        android:layout_height="350dp"
+        android:layout_gravity="center"
+        android:background="@drawable/box_message"
+        android:padding="15dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_category_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="ESPADAS"
+            android:textColor="#FFD700"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:shadowColor="#000000"
+            android:shadowRadius="3" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/moedas" />
+            <TextView
+                android:id="@+id/tv_shop_coins_internal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btn_prev_category"
+            android:layout_width="50dp"
+            android:layout_height="100dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#FFD700" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btn_next_category"
+            android:layout_width="50dp"
+            android:layout_height="100dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#FFD700" />
+
+        <GridLayout
+            android:id="@+id/grid_shop_items"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:columnCount="3"
+            android:rowCount="1"
+            android:alignmentMode="alignMargins"
+            android:useDefaultMargins="true" />
+
+        <Button
+            android:id="@+id/btn_close_merchant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:text="VOLTAR"
+            android:backgroundTint="#8B4513"
+            android:textColor="#FFFFFF" />
+    </RelativeLayout>
+
+    <!-- Caixa de Diálogo do Comerciante -->
+    <LinearLayout
+        android:id="@+id/layout_merchant_dialog"
+        android:layout_width="600dp"
+        android:layout_height="120dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/box_message"
+        android:orientation="vertical"
+        android:padding="15dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:id="@+id/tv_merchant_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bem-vindo..."
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:text="[Toque para continuar]"
+            android:textColor="#FFD700"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Overlay Detalhes Item -->
+    <FrameLayout
+        android:id="@+id/item_detail_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="320dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/box_message"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tv_detail_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ITEM"
+                android:textColor="#FFD700"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/iv_detail_icon"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/moedas" />
+
+            <TextView
+                android:id="@+id/tv_detail_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Info"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tv_detail_price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Preço"
+                android:textColor="#00FF00" />
+
+            <Button
+                android:id="@+id/btn_buy_item"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:text="COMPRAR"
+                android:backgroundTint="#2E8B57" />
+
+            <Button
+                android:id="@+id/btn_close_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="CANCELAR"
+                android:backgroundTint="#A52A2A" />
+        </LinearLayout>
+    </FrameLayout>
+
+</FrameLayout>
