@@ -13,18 +13,27 @@ public class HudManager {
     private static final SparseArray<Bitmap[]> frameCache = new SparseArray<>();
 
     public static Bitmap getHudFrame(Context context, int hp, int maxHp, int xp, int maxXp) {
-        float hpPct = (float) hp / maxHp;
+        float hpPct = (maxHp > 0) ? (float) hp / maxHp : 0;
         float xpPct = (maxXp > 0) ? (float) xp / maxXp : 0;
 
-        // Seleção de Spritesheet baseada no estado de saúde
-        int resId = R.drawable.hud_100hp;
-        if (hpPct <= 0) resId = R.drawable.hud_0hp;
-        else if (hpPct < 0.20f) resId = R.drawable.hud_25hp;
-        else if (hpPct < 0.45f) resId = R.drawable.hud_50hp;
-        else if (hpPct < 0.70f) resId = R.drawable.hud_75hp;
+        // Seleção de Spritesheet baseada no HP (0, 10, 20... 100)
+        int hpIndex = Math.round(hpPct * 10) * 10;
+        if (hpIndex < 0) hpIndex = 0;
+        if (hpIndex > 100) hpIndex = 100;
+        
+        // Se HP > 0 mas o arredondamento deu 0, forçamos o HUD de 10hp para não parecer morto
+        if (hp > 0 && hpIndex == 0) hpIndex = 10;
 
-        // Seleção de Frame baseado no progresso de XP (0-4)
-        int xpFrame = (xpPct < 0.15f) ? 0 : (xpPct < 0.35f) ? 1 : (xpPct < 0.60f) ? 2 : (xpPct < 0.85f) ? 3 : 4;
+        String resName = "hud_" + hpIndex + "hp";
+        int resId = context.getResources().getIdentifier(resName, "drawable", context.getPackageName());
+        
+        // Fallback caso algum recurso não exista
+        if (resId == 0) resId = R.drawable.hud_100hp;
+
+        // Seleção de Frame baseado no progresso de XP (0-10)
+        int xpFrame = Math.round(xpPct * 10);
+        if (xpFrame < 0) xpFrame = 0;
+        if (xpFrame > 10) xpFrame = 10;
 
         return getFromCache(context, resId, xpFrame);
     }
@@ -35,16 +44,17 @@ public class HudManager {
             Bitmap sheet = BitmapFactory.decodeResource(context.getResources(), resId);
             if (sheet == null) return null;
             
-            frames = new Bitmap[5];
-            int w = sheet.getWidth() / 5;
+            // Agora são 11 sprites por folha
+            frames = new Bitmap[11];
+            int w = sheet.getWidth() / 11;
             int h = sheet.getHeight();
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 11; i++) {
                 frames[i] = Bitmap.createBitmap(sheet, i * w, 0, w, h);
             }
             frameCache.put(resId, frames);
             sheet.recycle();
         }
-        return frames[Math.min(index, 4)];
+        return frames[Math.min(index, 10)];
     }
 
     public static void clearCache() {

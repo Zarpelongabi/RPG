@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,9 +25,6 @@ public class NovoJogoActivity extends Activity {
     // =========================================================================
     private PlayerView playerView;
     private ImageView ivHpFrame;
-    private Bitmap currentHudSheet;
-    private int lastHudResId = -1;
-    private int lastXpFrame = -1;
     private ImageView mapView;
     private FrameLayout mainLayout;
 
@@ -74,7 +72,23 @@ public class NovoJogoActivity extends Activity {
     private final int FRAME_TIME = 1000 / FPS;
 
     private String currentSlotId = null;
-    private String currentSlotName = "Novo Jogo";
+    private String currentSlotName = "HERÓI"; // Alterado para padrão retro
+    private String tempSaveName = ""; // Para o dialog de save
+    private final int MAX_NAME_LENGTH = 10;
+    private boolean isUpperCase = true;
+    private boolean cursorVisible = true;
+    private Handler cursorHandler = new Handler();
+    private TextView tvSaveDisplayName;
+    private GridLayout gridSaveLetters;
+
+    private final Runnable cursorRunnable = new Runnable() {
+        @Override
+        public void run() {
+            cursorVisible = !cursorVisible;
+            updateSaveDisplayName();
+            cursorHandler.postDelayed(this, 500);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +120,11 @@ public class NovoJogoActivity extends Activity {
         
         startGameLoop();
 
-        // 4. Se veio para carregar save:
+        // 4. Se veio de um novo jogo ou carregar save:
+        if (getIntent().hasExtra("player_name")) {
+            currentSlotName = getIntent().getStringExtra("player_name");
+        }
+        
         if (getIntent().hasExtra("slot_id")) {
             currentSlotId = getIntent().getStringExtra("slot_id");
             aplicarSave(currentSlotId);
@@ -134,7 +152,8 @@ public class NovoJogoActivity extends Activity {
     private void aplicarSave(String slotId) {
         SaveSystem.SaveSlot slot = SaveSystem.carregarSlot(this, slotId);
         if (slot != null) {
-            currentSlotName = slot.name;
+            // O nome que aparece no HUD ou diálogos é o do PERSONAGEM (playerName)
+            currentSlotName = slot.playerName;
             rotaAtual = slot.rota;
             playerHp = slot.hp;
             playerMaxHp = slot.maxHp;
@@ -158,64 +177,11 @@ public class NovoJogoActivity extends Activity {
     private void updateHUD() {
         if (ivHpFrame == null) return;
 
-        // 1. Seleciona o Recurso de HP
-        int resId;
-        float percentHp = (float) playerHp / playerMaxHp;
-
-        if (playerHp <= 0) {
-            resId = R.drawable.hud_0hp;
-        } else if (percentHp > 0.75f) {
-            resId = R.drawable.hud_100hp;
-        } else if (percentHp > 0.50f) {
-            resId = R.drawable.hud_75hp;
-        } else if (percentHp > 0.25f) {
-            resId = R.drawable.hud_50hp;
-        } else {
-            resId = R.drawable.hud_25hp;
-        }
-
-        // 2. Calcula o Frame de XP (0 a 4)
-        int xpFrame = 0;
         int xpToNext = (int)(20 * Math.pow(1.5, playerLevel - 1));
-        if (xpToNext > 0) {
-            float percentXp = (float) playerXp / xpToNext;
-            if (percentXp < 0.20f) xpFrame = 0;
-            else if (percentXp < 0.40f) xpFrame = 1;
-            else if (percentXp < 0.60f) xpFrame = 2;
-            else if (percentXp < 0.80f) xpFrame = 3;
-            else xpFrame = 4;
-        }
-
-        // 3. Aplica o Recurso e faz o Recorte
-        if (resId != lastHudResId || xpFrame != lastXpFrame) {
-            if (resId != lastHudResId) {
-                lastHudResId = resId;
-                if (currentHudSheet != null && !currentHudSheet.isRecycled()) {
-                    currentHudSheet.recycle();
-                }
-                currentHudSheet = BitmapFactory.decodeResource(getResources(), resId);
-            }
-            lastXpFrame = xpFrame;
-
-            if (currentHudSheet != null) {
-                try {
-                    int sw = currentHudSheet.getWidth();
-                    int sh = currentHudSheet.getHeight();
-                    
-                    // Cálculo preciso do frame (cada frame é 20% da largura total da spritesheet de 5 frames)
-                    int frameWidth = sw / 5;
-                    int xStart = Math.min(xpFrame, 4) * frameWidth;
-
-                    // Cria o bitmap apenas do frame desejado para evitar que apareçam os outros 4
-                    Bitmap cropped = Bitmap.createBitmap(currentHudSheet, xStart, 0, frameWidth, sh);
-                    
-                    // Aplica ao ImageView e remove qualquer imagem anterior
-                    ivHpFrame.setImageBitmap(cropped);
-                } catch (Exception e) {
-                    // Em caso de erro, evita mostrar a folha inteira esmagada
-                    ivHpFrame.setImageDrawable(null);
-                }
-            }
+        Bitmap hudFrame = HudManager.getHudFrame(this, playerHp, playerMaxHp, playerXp, xpToNext);
+        
+        if (hudFrame != null) {
+            ivHpFrame.setImageBitmap(hudFrame);
         }
     }
 
@@ -256,30 +222,144 @@ public class NovoJogoActivity extends Activity {
     }
 
     private void showSaveDialog() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Salvar Jogo");
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_save_game, null);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
 
-        final android.widget.EditText input = new android.widget.EditText(this);
-        input.setText(currentSlotName);
-        builder.setView(input);
+        tvSaveDisplayName = dialogView.findViewById(R.id.tv_save_display_name);
+        gridSaveLetters = dialogView.findViewById(R.id.grid_save_letters);
+        View btnBackspace = dialogView.findViewById(R.id.btn_save_backspace);
+        View btnCase = dialogView.findViewById(R.id.btn_save_case);
+        View btnCancel = dialogView.findViewById(R.id.btn_dialog_cancel);
+        View btnSave = dialogView.findViewById(R.id.btn_dialog_save);
 
-        builder.setPositiveButton("Salvar", (dialog, which) -> {
-            String name = input.getText().toString();
-            if (name.isEmpty()) name = "Sem Nome";
+        // Começamos com um campo limpo para o usuário nomear o arquivo de save
+        tempSaveName = "";
+        updateSaveDisplayName();
+        updateSaveKeyboard((Button) btnCase);
+        cursorHandler.post(cursorRunnable);
+
+        btnBackspace.setOnClickListener(v -> {
+            animarBotao(v);
+            if (tempSaveName.length() > 0) {
+                tempSaveName = tempSaveName.substring(0, tempSaveName.length() - 1);
+                updateSaveDisplayName();
+            }
+        });
+
+        ((Button) btnCase).setOnClickListener(v -> {
+            animarBotao(v);
+            isUpperCase = !isUpperCase;
+            updateSaveKeyboard((Button) v);
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            cursorHandler.removeCallbacks(cursorRunnable);
+            dialog.dismiss();
+        });
+
+        btnSave.setOnClickListener(v -> {
+            animarBotao(v);
+            String saveName = tempSaveName.trim();
+            if (saveName.isEmpty()) saveName = "SLOT JOGO"; // Nome padrão se estiver vazio
             
             if (currentSlotId == null) {
                 currentSlotId = String.valueOf(System.currentTimeMillis());
             }
-            currentSlotName = name;
             
-            SaveSystem.salvarJogo(this, currentSlotId, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual, 
+            // Agora o currentSlotName (que é o nome do personagem) é passado separadamente do nome do Save
+            SaveSystem.salvarJogo(this, currentSlotId, saveName, currentSlotName, playerView.getX(), playerView.getY(), rotaAtual, 
                                  playerHp, playerMaxHp, playerLevel, playerXp, playerCoins, defeatedEnemies);
-            Toast.makeText(this, "Jogo Salvo em: " + currentSlotName, Toast.LENGTH_SHORT).show();
+            
+            Toast.makeText(this, "Jornada Salva: " + saveName, Toast.LENGTH_SHORT).show();
+            cursorHandler.removeCallbacks(cursorRunnable);
+            dialog.dismiss();
             togglePause();
         });
-        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
 
-        builder.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialog.show();
+
+        // Animação de entrada do dialog content
+        dialogView.setAlpha(0f);
+        dialogView.setScaleX(0.9f);
+        dialogView.setScaleY(0.9f);
+        dialogView.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(300).start();
+    }
+
+    private void updateSaveKeyboard(Button btnCase) {
+        gridSaveLetters.removeAllViews();
+        String letters = isUpperCase ? "ABCDEFGHIJKLMNOPQRSTUVWXYZ" : "abcdefghijklmnopqrstuvwxyz";
+        String numbers = "0123456789";
+        String allChars = letters + numbers;
+        
+        if (btnCase != null) {
+            btnCase.setText(isUpperCase ? "ABC / abc" : "abc / ABC");
+        }
+
+        for (char c : allChars.toCharArray()) {
+            String display = String.valueOf(c);
+            adicionarBotaoSaveTeclado(display, v -> {
+                if (tempSaveName.length() < MAX_NAME_LENGTH) {
+                    tempSaveName += display;
+                    updateSaveDisplayName();
+                }
+            });
+        }
+    }
+
+    private void adicionarBotaoSaveTeclado(String texto, View.OnClickListener listener) {
+        Button btn = new Button(this);
+        btn.setText(texto);
+        btn.setMinWidth(0);
+        btn.setMinHeight(0);
+        
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        // 12 colunas: botões super compactos para garantir que caibam na tela
+        params.width = (int) (24 * getResources().getDisplayMetrics().density);
+        params.height = (int) (30 * getResources().getDisplayMetrics().density);
+        params.setMargins(1, 1, 1, 1);
+        btn.setLayoutParams(params);
+        
+        btn.setBackgroundResource(R.drawable.box_message);
+        btn.setPadding(0, 0, 0, 0); // Zerar padding após o background para ganhar espaço
+
+        btn.setTextColor(android.graphics.Color.WHITE);
+        btn.setTextSize(14); 
+        btn.setAllCaps(false);
+        
+        // CORREÇÃO PARA CARACTERES CORTADOS:
+        btn.setIncludeFontPadding(false); 
+        btn.setGravity(android.view.Gravity.CENTER);
+        
+        btn.setOnClickListener(v -> {
+            animarBotao(v);
+            listener.onClick(v);
+        });
+        gridSaveLetters.addView(btn);
+    }
+
+    private void updateSaveDisplayName() {
+        if (tvSaveDisplayName == null) return;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < MAX_NAME_LENGTH; i++) {
+            if (i < tempSaveName.length()) {
+                sb.append(tempSaveName.charAt(i)).append(" ");
+            } else if (i == tempSaveName.length()) {
+                sb.append(cursorVisible ? "_ " : "  ");
+            } else {
+                sb.append("_ ");
+            }
+        }
+        tvSaveDisplayName.setText(sb.toString().trim());
+    }
+
+    private void animarBotao(View v) {
+        v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(50)
+                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(50).start()).start();
     }
 
     /**
@@ -384,13 +464,10 @@ public class NovoJogoActivity extends Activity {
                     return;
                 }
 
-                // --- EFEITO DE MOVIMENTO NO MAPA (CÂMERA) ---
-                // O mapa se move levemente na direção oposta ao jogador
-                float scrollX = (larguraTela / 2f - novaX) * 0.1f;
-                float scrollY = (alturaTela / 2f - novaY) * 0.1f;
-                
-                mapView.setTranslationX(scrollX);
-                mapView.setTranslationY(scrollY);
+                // --- EFEITO DE MOVIMENTO NO MAPA (CÂMERA REMOVIDA) ---
+                // O mapa agora fica estático conforme solicitado
+                mapView.setTranslationX(0);
+                mapView.setTranslationY(0);
 
                 // Aplicar as travas laterais (Mato)
                 if (novaX < limiteEsquerdo) novaX = limiteEsquerdo;
@@ -440,6 +517,7 @@ public class NovoJogoActivity extends Activity {
         Intent intent = new Intent(this, BattleActivity.class);
         intent.putExtra("enemy_name", monstro.getName());
         intent.putExtra("enemy_res", monstro.getBattleImageResId());
+        intent.putExtra("player_name", currentSlotName);
         
         // Passar status atuais do jogador para a batalha
         intent.putExtra("p_hp", playerHp);
@@ -521,22 +599,30 @@ public class NovoJogoActivity extends Activity {
     private void mudarDeMapa() {
         if (isTransitioning) return;
         isTransitioning = true;
-        rotaAtual++;
         
-        // Pequeno atraso para dar efeito de transição
-        new Handler().postDelayed(() -> {
-            int alturaTela = mainLayout.getHeight();
-            
-            // Coloca o personagem lá embaixo de novo
-            playerView.setY(alturaTela - playerView.getHeight() - 150);
-            
-            if (enemyManager != null) {
-                enemyManager.configureForMap(rotaAtual - 1);
-            }
-            
+        final View transition = findViewById(R.id.view_transition);
+        if (transition != null) {
+            transition.setVisibility(View.VISIBLE);
+            transition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
+                rotaAtual++;
+                int alturaTela = mainLayout.getHeight();
+                playerView.setY(alturaTela - playerView.getHeight() - 150);
+                
+                if (enemyManager != null) {
+                    enemyManager.configureForMap(rotaAtual - 1);
+                }
+                
+                Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+                
+                transition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+                    transition.setVisibility(View.GONE);
+                    isTransitioning = false;
+                }).start();
+            }).start();
+        } else {
+            rotaAtual++;
             isTransitioning = false;
-            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
-        }, 300);
+        }
     }
 
     private void voltarMapa() {
@@ -548,18 +634,29 @@ public class NovoJogoActivity extends Activity {
         }
 
         isTransitioning = true;
-        rotaAtual--;
+        
+        final View transition = findViewById(R.id.view_transition);
+        if (transition != null) {
+            transition.setVisibility(View.VISIBLE);
+            transition.animate().alpha(1f).setDuration(400).withEndAction(() -> {
+                rotaAtual--;
+                playerView.setY(250);
+                
+                if (enemyManager != null) {
+                    enemyManager.configureForMap(rotaAtual - 1);
+                }
 
-        new Handler().postDelayed(() -> {
-            playerView.setY(250);
-            
-            if (enemyManager != null) {
-                enemyManager.configureForMap(rotaAtual - 1);
-            }
-
+                Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
+                
+                transition.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+                    transition.setVisibility(View.GONE);
+                    isTransitioning = false;
+                }).start();
+            }).start();
+        } else {
+            rotaAtual--;
             isTransitioning = false;
-            Toast.makeText(this, "Rota " + rotaAtual, Toast.LENGTH_SHORT).show();
-        }, 300);
+        }
     }
 
     // =========================================================================

@@ -15,7 +15,8 @@ public class SaveSystem {
 
     public static class SaveSlot {
         public String id;
-        public String name;
+        public String name; // Nome do Save/Slot
+        public String playerName; // Nome do Personagem
         public float playerX;
         public float playerY;
         public int rota;
@@ -26,9 +27,10 @@ public class SaveSystem {
         public int coins;
         public boolean[][] defeatedEnemies;
 
-        public SaveSlot(String id, String name, float playerX, float playerY, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
+        public SaveSlot(String id, String name, String playerName, float playerX, float playerY, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
             this.id = id;
             this.name = name;
+            this.playerName = playerName;
             this.playerX = playerX;
             this.playerY = playerY;
             this.rota = rota;
@@ -44,6 +46,7 @@ public class SaveSystem {
             JSONObject json = new JSONObject();
             json.put("id", id);
             json.put("name", name);
+            json.put("playerName", playerName);
             json.put("playerX", playerX);
             json.put("playerY", playerY);
             json.put("rota", rota);
@@ -83,6 +86,7 @@ public class SaveSystem {
             return new SaveSlot(
                 json.getString("id"),
                 json.getString("name"),
+                json.optString("playerName", json.optString("name", "HERÓI")),
                 (float) json.getDouble("playerX"),
                 (float) json.getDouble("playerY"),
                 json.optInt("rota", 1),
@@ -96,11 +100,11 @@ public class SaveSystem {
         }
     }
 
-    public static void salvarJogo(Context context, String slotId, String slotName, float x, float y, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
+    public static void salvarJogo(Context context, String slotId, String slotName, String playerName, float x, float y, int rota, int hp, int maxHp, int level, int xp, int coins, boolean[][] defeatedEnemies) {
         List<SaveSlot> slots = carregarTodosSaves(context);
         boolean found = false;
 
-        SaveSlot newSlot = new SaveSlot(slotId, slotName, x, y, rota, hp, maxHp, level, xp, coins, defeatedEnemies);
+        SaveSlot newSlot = new SaveSlot(slotId, slotName, playerName, x, y, rota, hp, maxHp, level, xp, coins, defeatedEnemies);
 
         for (int i = 0; i < slots.size(); i++) {
             if (slots.get(i).id.equals(slotId)) {

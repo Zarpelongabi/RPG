@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#220000"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:minWidth="340dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="NOME DO REGISTRO"
+        android:textColor="#D4AF37"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Nome Display -->
+    <TextView
+        android:id="@+id/tv_save_display_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#44000000"
+        android:text="_ _ _ _ _ _ _ _ _ _"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:gravity="center"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.1" />
+
+    <!-- Grid do Teclado Alfanumérico (Forçado 12 colunas) -->
+    <GridLayout
+        android:id="@+id/grid_save_letters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:columnCount="12"
+        android:useDefaultMargins="false"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/btn_save_backspace"
+            android:layout_width="80dp"
+            android:layout_height="40dp"
+            android:text="DEL"
+            android:textSize="12sp"
+            android:backgroundTint="#880000"
+            android:layout_marginEnd="10dp" />
+
+        <Button
+            android:id="@+id/btn_save_case"
+            android:layout_width="100dp"
+            android:layout_height="40dp"
+            android:text="ABC/abc"
+            android:textSize="12sp"
+            android:backgroundTint="#444444" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/btn_dialog_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CANCELAR"
+            android:textColor="#BBBBBB"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:layout_marginEnd="30dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/btn_dialog_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/btn_main_menu"
+            android:text="SALVAR"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+</LinearLayout>

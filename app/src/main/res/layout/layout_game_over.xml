@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container_game_over"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E6000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/box_message"
+        android:orientation="vertical"
+        android:padding="30dp"
+        android:elevation="15dp">
+
+        <TextView
+            android:id="@+id/tv_game_over_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="VOCÊ CAIU"
+            android:textColor="#FF0000"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:shadowColor="#000000"
+            android:shadowDx="3"
+            android:shadowDy="3"
+            android:shadowRadius="3"
+            android:layout_marginBottom="10dp"/>
+
+        <TextView
+            android:id="@+id/tv_game_over_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Sua jornada termina aqui..."
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:fontFamily="serif"
+            android:layout_marginBottom="30dp"/>
+
+        <Button
+            android:id="@+id/btn_game_over_retry"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="TENTAR NOVAMENTE"
+            android:backgroundTint="#2E8B57"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_marginBottom="15dp" />
+
+        <Button
+            android:id="@+id/btn_game_over_quit"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="VOLTAR AO MENU"
+            android:backgroundTint="#555555"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</FrameLayout>

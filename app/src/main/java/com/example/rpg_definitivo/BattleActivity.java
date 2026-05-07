@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -37,10 +39,17 @@ public class BattleActivity extends Activity {
 
     private int playerMaxHp, playerHp, playerLevel, playerXp, xpToNextLevel;
     private int enemyMaxHp = 25, enemyHp = 25, enemyDamage = 6, enemyXpReward = 8;
+    private int enemyResId;
+
+    private int playerFrame = 0, enemyFrame = 0;
+    private Bitmap playerSheet, enemySheet;
+    private boolean isPlayerAnimatingFrames = false;
+    private boolean isEnemyAnimatingFrames = false;
 
     private boolean isPlayerTurn = true;
     private boolean isTyping = false;
     private String fullMessage = "";
+    private String playerName = "HERÓI";
     private final Handler handler = new Handler();
     private Runnable typingRunnable;
 
@@ -53,9 +62,15 @@ public class BattleActivity extends Activity {
         vincularViews();
         configurarBotoes();
         carregarStatus();
-        iniciarAnimacoesIdle();
         
-        escreverMensagem("Um " + tvEnemyName.getText() + " bloqueia seu caminho!");
+        playerName = getIntent().getStringExtra("player_name");
+        if (playerName == null || playerName.isEmpty()) playerName = "HERÓI";
+
+        // Fade in inicial
+        rootLayout.setAlpha(0f);
+        rootLayout.animate().alpha(1f).setDuration(1000).start();
+
+        escreverMensagem("Um " + tvEnemyName.getText() + " bloqueia o caminho de " + playerName + "!");
     }
 
     private void vincularViews() {
@@ -99,18 +114,106 @@ public class BattleActivity extends Activity {
 
         String name = getIntent().getStringExtra("enemy_name");
         if (name != null) tvEnemyName.setText(name.toUpperCase());
+        
+        enemyResId = getIntent().getIntExtra("enemy_res", 0);
+        
+        // Carrega as Sheets
+        playerSheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_batalhapersonagem);
+        
+        // Correção do Goblin e outros inimigos
+        if (enemyResId != 0) {
+            enemySheet = BitmapFactory.decodeResource(getResources(), enemyResId);
+        }
+        
+        // Se ainda for nulo (ou se o ID veio errado), tenta o goblin padrão
+        if (enemySheet == null) {
+            enemySheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_batalhagoblin);
+        }
 
         enemyHp = enemyMaxHp;
         pbEnemyHp.setMax(enemyMaxHp);
         pbEnemyHp.setProgress(enemyHp);
+        
+        // Sincroniza HUD inicial sem animação
         atualizarHUD(false);
+
+        // Aplica escala baseada no tipo de inimigo (Pokémon style)
+        // Jogador base é 220dp no XML
+        float playerBaseSize = 220;
+        String eName = tvEnemyName.getText().toString().toLowerCase();
+        
+        android.view.ViewGroup.LayoutParams params = ivEnemy.getLayoutParams();
+        if (eName.contains("boss")) {
+            // Boss 10% maior que o herói
+            params.width = (int) (playerBaseSize * 1.1 * getResources().getDisplayMetrics().density);
+            params.height = (int) (playerBaseSize * 1.1 * getResources().getDisplayMetrics().density);
+        } else if (eName.contains("experiente")) {
+            // Experiente 10% menor que o herói
+            params.width = (int) (playerBaseSize * 0.9 * getResources().getDisplayMetrics().density);
+            params.height = (int) (playerBaseSize * 0.9 * getResources().getDisplayMetrics().density);
+        } else {
+            // Normal 20% menor que o herói
+            params.width = (int) (playerBaseSize * 0.8 * getResources().getDisplayMetrics().density);
+            params.height = (int) (playerBaseSize * 0.8 * getResources().getDisplayMetrics().density);
+        }
+        ivEnemy.setLayoutParams(params);
+        
+        // Inicia ciclo de animação de frames (recortando a sheet)
+        iniciarAnimacaoFrames();
+    }
+
+    private void iniciarAnimacaoFrames() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                // Jogador
+                if (playerSheet != null) {
+                    ivPlayer.setImageBitmap(getFrame(playerSheet, isPlayerAnimatingFrames ? playerFrame : 0, 3));
+                    if (isPlayerAnimatingFrames) {
+                        playerFrame = (playerFrame + 1) % 3;
+                    } else {
+                        playerFrame = 0;
+                    }
+                }
+                // Inimigo
+                if (enemySheet != null) {
+                    ivEnemy.setImageBitmap(getFrame(enemySheet, isEnemyAnimatingFrames ? enemyFrame : 0, 3));
+                    if (isEnemyAnimatingFrames) {
+                        enemyFrame = (enemyFrame + 1) % 3;
+                    } else {
+                        enemyFrame = 0;
+                    }
+                }
+                
+                // Velocidade adaptativa: 150ms em combate, mas pode ser menor se precisar
+                handler.postDelayed(this, 150);
+            }
+        });
+    }
+
+    private Bitmap getFrame(Bitmap sheet, int frame, int totalFrames) {
+        if (sheet == null) return null;
+        
+        // Garante que o recorte seja baseado na largura REAL da imagem carregada
+        // O Android às vezes faz scale automático no BitmapFactory dependendo da densidade
+        int sheetWidth = sheet.getWidth();
+        int sheetHeight = sheet.getHeight();
+        int frameWidth = sheetWidth / totalFrames;
+        
+        // Segurança para não estourar o limite da imagem
+        int startX = Math.min(frame * frameWidth, sheetWidth - frameWidth);
+        
+        return Bitmap.createBitmap(sheet, startX, 0, frameWidth, sheetHeight);
     }
 
     private void abrirMenuAtaque(View v) {
         PopupMenu p = new PopupMenu(this, v);
         p.getMenu().add("Golpe Cortante");
         p.getMenu().add("Ataque Furtivo");
+        
+        // Remove modo teste em produção ou mantém se o usuário quiser
         p.getMenu().add("Modo Teste (0 Dano)");
+
         p.setOnMenuItemClickListener(item -> {
             executarAtaqueJogador(item.getTitle().toString().contains("0 Dano"));
             return true;
@@ -121,6 +224,7 @@ public class BattleActivity extends Activity {
     private void executarAtaqueJogador(boolean isTest) {
         isPlayerTurn = false;
         setButtonsEnabled(false);
+        isPlayerAnimatingFrames = true; // Começa a animar o spritesheet
 
         // Animação Squash & Stretch (Preparação)
         ivPlayer.animate().translationXBy(140).scaleX(1.2f).scaleY(0.8f).setDuration(150)
@@ -140,6 +244,7 @@ public class BattleActivity extends Activity {
             // Retorno
             ivPlayer.animate().translationX(0).scaleX(1f).scaleY(1f).setDuration(300)
                     .setInterpolator(new DecelerateInterpolator()).withEndAction(() -> {
+                isPlayerAnimatingFrames = false; // Para de animar o spritesheet
                 escreverMensagem(crit ? "GOLPE CRÍTICO! " + dano + " de dano!" : "Você causou " + dano + " de dano.");
                 handler.postDelayed(() -> { if (enemyHp <= 0) vitoria(); else turnoInimigo(); }, 1500);
             }).start();
@@ -147,20 +252,26 @@ public class BattleActivity extends Activity {
     }
 
     private void turnoInimigo() {
+        isEnemyAnimatingFrames = true; // Começa a animar o goblin
         ivEnemy.animate().translationXBy(-100).setDuration(250).withEndAction(() -> {
-            int dano = enemyDamage + (int)(Math.random() * 4);
+            // Lógica de Dano solicitada: 10 fixo, Crítico (1/20) = 20
+            boolean criticoInimigo = Math.random() < 0.05; // 1/20 = 5%
+            int dano = criticoInimigo ? 20 : 10;
+            
             playerHp = Math.max(0, playerHp - dano);
             
-            aplicarEfeitosImpacto(ivPlayer, false);
+            aplicarEfeitosImpacto(ivPlayer, criticoInimigo);
             shakeView(ivHpFrame, 10);
-            exibirDanoFlutuante(dano, ivPlayer, false, true);
+            exibirDanoFlutuante(dano, ivPlayer, criticoInimigo, true);
             vibrar(60);
             atualizarHUD(true);
 
             ivEnemy.animate().translationX(0).setDuration(300).withEndAction(() -> {
-                escreverMensagem("O inimigo atacou! Você perdeu " + dano + " de vida.");
+                isEnemyAnimatingFrames = false; // Para de animar o goblin
+                String msg = criticoInimigo ? "GOLPE LETAL! " + playerName + " perdeu " + dano + " de vida!" : "O inimigo atacou! " + playerName + " perdeu " + dano + " de vida.";
+                escreverMensagem(msg);
                 if (playerHp <= 0) gameOver();
-                else handler.postDelayed(() -> { isPlayerTurn = true; setButtonsEnabled(true); escreverMensagem("O que você fará?"); }, 1200);
+                else handler.postDelayed(() -> { isPlayerTurn = true; setButtonsEnabled(true); escreverMensagem("O que " + playerName + " fará?"); }, 1200);
             }).start();
         }).start();
     }
@@ -203,7 +314,7 @@ public class BattleActivity extends Activity {
             atualizarHUD(true);
             if (subiu) {
                 escreverMensagem("LEVEL UP! Nível " + playerLevel);
-                ivPlayer.animate().scaleX(1.4f).scaleY(1.4f).setDuration(400).withEndAction(() -> 
+                ivPlayer.animate().scaleX(1.4f).scaleY(1.4f).setDuration(400).withEndAction(() ->
                     ivPlayer.animate().scaleX(1f).scaleY(1f).setDuration(300).start()).start();
                 handler.postDelayed(() -> encerrarBatalha(RESULT_OK), 2200);
             } else handler.postDelayed(() -> encerrarBatalha(RESULT_OK), 1800);
@@ -211,14 +322,24 @@ public class BattleActivity extends Activity {
     }
 
     private void atualizarHUD(boolean animar) {
-        int th = playerMaxHp - playerHp; int tx = xpToNextLevel - playerXp;
-        pbPlayerHp.setMax(playerMaxHp); pbPlayerXp.setMax(xpToNextLevel);
+        int hpProgress = playerMaxHp - playerHp;
+        int xpProgress = xpToNextLevel - playerXp;
+        pbPlayerHp.setMax(playerMaxHp);
+        pbPlayerXp.setMax(xpToNextLevel);
+        
         if (animar) {
-            ValueAnimator ha = ValueAnimator.ofInt(pbPlayerHp.getProgress(), th).setDuration(600);
-            ha.addUpdateListener(a -> { pbPlayerHp.setProgress((int)a.getAnimatedValue()); syncHud(); }); ha.start();
-            ValueAnimator xa = ValueAnimator.ofInt(pbPlayerXp.getProgress(), tx).setDuration(800);
-            xa.addUpdateListener(a -> { pbPlayerXp.setProgress((int)a.getAnimatedValue()); syncHud(); }); xa.start();
-        } else { pbPlayerHp.setProgress(th); pbPlayerXp.setProgress(tx); syncHud(); }
+            ValueAnimator ha = ValueAnimator.ofInt(pbPlayerHp.getProgress(), hpProgress).setDuration(600);
+            ha.addUpdateListener(a -> { pbPlayerHp.setProgress((int)a.getAnimatedValue()); syncHud(); }); 
+            ha.start();
+            
+            ValueAnimator xa = ValueAnimator.ofInt(pbPlayerXp.getProgress(), xpProgress).setDuration(800);
+            xa.addUpdateListener(a -> { pbPlayerXp.setProgress((int)a.getAnimatedValue()); syncHud(); }); 
+            xa.start();
+        } else { 
+            pbPlayerHp.setProgress(hpProgress); 
+            pbPlayerXp.setProgress(xpProgress); 
+            syncHud(); 
+        }
     }
 
     private void syncHud() {
@@ -250,20 +371,6 @@ public class BattleActivity extends Activity {
         v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(80).withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(80).start()).start();
     }
 
-    private void iniciarAnimacoesIdle() {
-        ObjectAnimator playerIdle = ObjectAnimator.ofFloat(ivPlayer, "translationY", 0f, -8f);
-        playerIdle.setDuration(1200);
-        playerIdle.setRepeatMode(ValueAnimator.REVERSE);
-        playerIdle.setRepeatCount(ValueAnimator.INFINITE);
-        playerIdle.start();
-
-        ObjectAnimator enemyIdle = ObjectAnimator.ofFloat(ivEnemy, "translationY", 0f, 6f);
-        enemyIdle.setDuration(1800);
-        enemyIdle.setRepeatMode(ValueAnimator.REVERSE);
-        enemyIdle.setRepeatCount(ValueAnimator.INFINITE);
-        enemyIdle.start();
-    }
-
     private void vibrar(int ms) {
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (v != null && v.hasVibrator()) v.vibrate(ms);
@@ -275,6 +382,33 @@ public class BattleActivity extends Activity {
 
     private void setButtonsEnabled(boolean e) { btnAttack.setEnabled(e); btnRun.setEnabled(e); btnSkill.setEnabled(e); btnItem.setEnabled(e); }
     private void fugir() { escreverMensagem("Você escapou!"); handler.postDelayed(this::finish, 1000); }
-    private void gameOver() { escreverMensagem("Você tombou..."); ivPlayer.animate().alpha(0).setDuration(2000).start(); handler.postDelayed(() -> { startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)); finish(); }, 3000); }
+    private void gameOver() {
+        escreverMensagem("");
+        
+        View gameOverContainer = findViewById(R.id.container_game_over);
+        if (gameOverContainer == null) return;
+
+        gameOverContainer.setVisibility(View.VISIBLE);
+        gameOverContainer.setAlpha(0f);
+        
+        Button btnRetry = findViewById(R.id.btn_game_over_retry);
+        Button btnQuit = findViewById(R.id.btn_game_over_quit);
+
+        btnRetry.setOnClickListener(v -> {
+            animarBotao(v);
+            // Reinicia a batalha ou volta para o último ponto? 
+            // Por enquanto, volta para o menu principal limpo como solicitado anteriormente
+            startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+            finish();
+        });
+
+        btnQuit.setOnClickListener(v -> {
+            animarBotao(v);
+            finish();
+        });
+
+        gameOverContainer.animate().alpha(1f).setDuration(2000).start();
+        ivPlayer.animate().alpha(0).setDuration(2000).start();
+    }
     private void encerrarBatalha(int r) { HudManager.clearCache(); Intent d = new Intent(); d.putExtra("p_hp", playerHp); d.putExtra("p_max_hp", playerMaxHp); d.putExtra("p_level", playerLevel); d.putExtra("p_xp", playerXp); setResult(r, d); finish(); }
 }

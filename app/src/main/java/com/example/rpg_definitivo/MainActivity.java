@@ -104,12 +104,13 @@ public class MainActivity extends Activity {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("Escolha um Save");
 
-        String[] nomes = new String[slots.size()];
+        String[] labels = new String[slots.size()];
         for (int i = 0; i < slots.size(); i++) {
-            nomes[i] = slots.get(i).name;
+            SaveSystem.SaveSlot s = slots.get(i);
+            labels[i] = s.name + " (" + s.playerName + " - LV" + s.level + ")";
         }
 
-        builder.setItems(nomes, (dialog, which) -> {
+        builder.setItems(labels, (dialog, which) -> {
             SaveSystem.SaveSlot selecionado = slots.get(which);
             carregarPartida(selecionado.id);
         });
@@ -126,14 +127,17 @@ public class MainActivity extends Activity {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("Excluir Save");
 
-        String[] nomes = new String[slots.size()];
+        String[] labels = new String[slots.size()];
         for (int i = 0; i < slots.size(); i++) {
-            nomes[i] = slots.get(i).name;
+            SaveSystem.SaveSlot s = slots.get(i);
+            labels[i] = s.name + " (" + s.playerName + ")";
         }
 
-        builder.setItems(nomes, (dialog, which) -> {
+        builder.setItems(labels, (dialog, which) -> {
             SaveSystem.excluirSave(this, slots.get(which).id);
             Toast.makeText(this, "Save excluído!", Toast.LENGTH_SHORT).show();
+            // Recarregar o menu de load se estiver visível
+            if (isMenuOpen) mostrarSlotsLoad();
         });
 
         builder.show();

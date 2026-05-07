@@ -1,49 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Estado Pressionado -->
+    <!-- Pressionado -->
     <item android:state_pressed="true">
         <layer-list>
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#FF0000" /> <!-- Borda brilhante ao clicar -->
-                    <corners android:radius="2dp" />
+                    <solid android:color="#FF0000" />
+                    <corners android:radius="4dp" />
                 </shape>
             </item>
             <item android:top="2dp" android:bottom="2dp" android:left="2dp" android:right="2dp">
                 <shape android:shape="rectangle">
-                    <solid android:color="#440000" />
-                    <corners android:radius="2dp" />
+                    <gradient
+                        android:angle="270"
+                        android:startColor="#880000"
+                        android:endColor="#440000" />
+                    <corners android:radius="4dp" />
                 </shape>
             </item>
         </layer-list>
     </item>
 
-    <!-- Estado Normal -->
+    <!-- Normal -->
     <item>
         <layer-list>
-            <!-- Sombra externa sutil -->
-            <item android:top="2dp" android:left="2dp">
+            <!-- Borda Externa (Ferro Escuro/Sangue Seco) -->
+            <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#80000000" />
-                    <corners android:radius="2dp" />
+                    <solid android:color="#330000" />
+                    <corners android:radius="4dp" />
                 </shape>
             </item>
-            <!-- Borda Externa (Cor de Sangue Seco/Ferro) -->
-            <item android:bottom="2dp" android:right="2dp">
+
+            <!-- Borda de Destaque Superior -->
+            <item android:bottom="3dp">
                 <shape android:shape="rectangle">
-                    <solid android:color="#660000" />
-                    <corners android:radius="2dp" />
+                    <solid android:color="#AA0000" />
+                    <corners android:radius="4dp" />
                 </shape>
             </item>
-            <!-- Fundo Interno (Gradiente Escuro Profundo) -->
-            <item android:bottom="4dp" android:right="4dp" android:top="2dp" android:left="2dp">
+
+            <!-- Fundo Interno (Gradiente de Vermelho Profundo) -->
+            <item android:top="2dp" android:left="2dp" android:right="2dp" android:bottom="4dp">
                 <shape android:shape="rectangle">
                     <gradient
                         android:angle="270"
-                        android:startColor="#E62B2B2B"
-                        android:centerColor="#E61A1A1A"
-                        android:endColor="#E6000000" />
-                    <corners android:radius="1dp" />
+                        android:startColor="#990000"
+                        android:centerColor="#660000"
+                        android:endColor="#330000" />
+                    <corners android:radius="2dp" />
+                </shape>
+            </item>
+
+            <!-- Brilho Interno Superior -->
+            <item android:top="2dp" android:left="6dp" android:right="6dp" android:bottom="25dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#33FFFFFF" />
+                    <corners android:radius="10dp" />
                 </shape>
             </item>
         </layer-list>

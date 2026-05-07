@@ -26,6 +26,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets {
+        main {
+            res.srcDirs = [
+                'src/main/res',
+                'src/main/res-huds',
+                'src/main/res-sprites',
+                'src/main/res-backgrounds'
+            ]
+        }
+    }
+
     testOptions {
         unitTests.returnDefaultValues = true
     }

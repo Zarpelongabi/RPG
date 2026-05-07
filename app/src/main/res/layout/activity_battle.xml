@@ -49,19 +49,20 @@
 
     <ImageView
         android:id="@+id/iv_enemy_battle"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="40dp" />
-
-    <!-- STATUS DO JOGADOR (HUD DINÂMICA) -->
-    <RelativeLayout
-        android:layout_width="320dp"
-        android:layout_height="125dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:layout_gravity="bottom|end"
-        android:layout_marginBottom="130dp"
-        android:layout_marginEnd="10dp">
+        android:layout_marginEnd="180dp"
+        android:layout_marginBottom="190dp"
+        android:scaleType="fitCenter" />
+
+    <!-- STATUS DO JOGADOR (HUD DINÂMICA) - Reduzida e posicionada -->
+    <RelativeLayout
+        android:layout_width="150dp"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="140dp"
+        android:layout_marginEnd="5dp">
 
         <ImageView
             android:id="@+id/iv_hp_frame"
@@ -70,36 +71,37 @@
             android:scaleType="fitXY"
             android:src="@drawable/hud_100hp" />
 
-        <!-- Máscaras de sombra para suavizar a barra do sprite -->
         <ProgressBar
             android:id="@+id/pb_player_hp"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="168dp"
-            android:layout_height="8dp"
-            android:layout_marginStart="107dp"
-            android:layout_marginTop="46dp"
+            android:layout_width="80dp"
+            android:layout_height="4dp"
+            android:layout_marginStart="51dp"
+            android:layout_marginTop="22dp"
             android:progressDrawable="@drawable/hp_mask"
+            android:rotation="180"
             android:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/pb_player_xp"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="168dp"
-            android:layout_height="8dp"
-            android:layout_marginStart="107dp"
-            android:layout_marginTop="73dp"
+            android:layout_width="80dp"
+            android:layout_height="4dp"
+            android:layout_marginStart="51dp"
+            android:layout_marginTop="35dp"
             android:progressDrawable="@drawable/hp_mask"
+            android:rotation="180"
             android:visibility="visible" />
     </RelativeLayout>
 
     <ImageView
         android:id="@+id/iv_player_battle"
-        android:layout_width="240dp"
-        android:layout_height="240dp"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
         android:layout_gravity="bottom|start"
-        android:layout_marginStart="10dp"
-        android:layout_marginBottom="90dp"
-        android:src="@drawable/sprite_batalhapersonagem" />
+        android:layout_marginStart="180dp"
+        android:layout_marginBottom="110dp"
+        android:scaleType="fitCenter" />
 
     <!-- CAIXA DE MENSAGENS E COMANDOS -->
     <LinearLayout
@@ -138,4 +140,7 @@
             <Button android:id="@+id/btn_run" android:layout_width="0dp" android:layout_columnWeight="1" android:layout_height="44dp" android:text="FUGIR" android:backgroundTint="#555555" android:layout_margin="2dp" android:textSize="12sp" />
         </GridLayout>
     </LinearLayout>
+
+    <include layout="@layout/layout_game_over" />
+
 </FrameLayout>

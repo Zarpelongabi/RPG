@@ -33,11 +33,25 @@ public class EnemyManager {
     }
 
     private void spawnEnemiesForMap(int mapIndex) {
-        int normalSize = (int) (80 * context.getResources().getDisplayMetrics().density);
+        // Tamanho base do jogador é 80dp
+        int playerSize = (int) (80 * context.getResources().getDisplayMetrics().density);
+        
         switch (mapIndex) {
-            case 0: addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
-            case 1: addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
-            case 2: addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, normalSize); break;
+            case 0: 
+                // Goblin normal: 20% menor que o personagem (0.8x)
+                int goblinSize = (int) (playerSize * 0.8);
+                addEnemy(new Goblin(), 0, screenW * 0.5, screenH * 0.3, goblinSize); 
+                break;
+            case 1: 
+                // Goblin experiente: 10% menor que o personagem (0.9x)
+                int goblinExpSize = (int) (playerSize * 0.9);
+                addEnemy(new GoblinExp(), 0, screenW * 0.5, screenH * 0.3, goblinExpSize); 
+                break;
+            case 2: 
+                // Boss: 10% maior que o personagem (1.1x)
+                int bossSize = (int) (playerSize * 1.1);
+                addEnemy(new BossGoblin(), 0, screenW * 0.5, screenH * 0.3, bossSize); 
+                break;
         }
     }
 

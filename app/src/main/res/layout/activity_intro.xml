@@ -34,4 +34,6 @@
         android:clickable="true"
         android:focusable="true" />
 
+    <include layout="@layout/layout_name_input" />
+
 </FrameLayout>
