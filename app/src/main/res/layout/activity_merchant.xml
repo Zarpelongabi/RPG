@@ -11,127 +11,184 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/battlebg2" />
+        android:src="@drawable/floresta" />
 
-    <!-- Personagem Comerciante (Centralizado para Diálogo) -->
-    <ImageView
-        android:id="@+id/iv_merchant_sprite"
-        android:layout_width="300dp"
-        android:layout_height="350dp"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="120dp"
-        android:scaleType="fitCenter" />
-
-    <!-- Área da Loja (PvZ Style) -->
-    <RelativeLayout
+    <!-- Área da Loja (Usando ConstraintLayout para alinhamento por PORCENTAGEM) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_shop_area"
-        android:layout_width="500dp"
-        android:layout_height="350dp"
-        android:layout_gravity="center"
-        android:background="@drawable/box_message"
-        android:padding="15dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/tv_category_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:text="ESPADAS"
-            android:textColor="#FFD700"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:shadowColor="#000000"
-            android:shadowRadius="3" />
+        <ImageView
+            android:id="@+id/iv_shop_shelf_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/loja_armas" />
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:gravity="center_vertical">
-            <ImageView
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:src="@drawable/moedas" />
-            <TextView
-                android:id="@+id/tv_shop_coins_internal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:text="0"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp" />
-        </LinearLayout>
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btn_prev_category"
-            android:layout_width="50dp"
-            android:layout_height="100dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentStart="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_previous"
-            app:tint="#FFD700" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btn_next_category"
-            android:layout_width="50dp"
-            android:layout_height="100dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_next"
-            app:tint="#FFD700" />
-
+        <!-- Overlay de Itens: Alinhado com as prateleiras -->
         <GridLayout
             android:id="@+id/grid_shop_items"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintWidth_percent="0.75"
+            app:layout_constraintHeight_percent="0.45"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintVertical_bias="0.42"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:columnCount="5"
+            android:rowCount="3"
+            android:useDefaultMargins="false" />
+
+        <!-- Navegação: Setas da roda -->
+        <View
+            android:id="@+id/btn_prev_category"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            app:layout_constraintHorizontal_bias="0.41"
+            app:layout_constraintVertical_bias="0.86"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <View
+            android:id="@+id/btn_next_category"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            app:layout_constraintHorizontal_bias="0.59"
+            app:layout_constraintVertical_bias="0.86"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Moedas: Slot marrom esquerdo superior -->
+        <TextView
+            android:id="@+id/tv_shop_coins_internal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:columnCount="3"
-            android:rowCount="1"
-            android:alignmentMode="alignMargins"
-            android:useDefaultMargins="true" />
+            app:layout_constraintHorizontal_bias="0.315"
+            app:layout_constraintVertical_bias="0.778"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="1" />
 
-        <Button
+        <!-- Botão Exit: Sobre o gráfico 'Exit' -->
+        <View
             android:id="@+id/btn_close_merchant"
+            android:layout_width="140dp"
+            android:layout_height="45dp"
+            app:layout_constraintHorizontal_bias="0.27"
+            app:layout_constraintVertical_bias="0.895"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Total: Slot marrom direito superior -->
+        <TextView
+            android:id="@+id/tv_cart_total"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:text="VOLTAR"
-            android:backgroundTint="#8B4513"
-            android:textColor="#FFFFFF" />
-    </RelativeLayout>
+            app:layout_constraintHorizontal_bias="0.765"
+            app:layout_constraintVertical_bias="0.778"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:shadowColor="#000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="1" />
 
-    <!-- Caixa de Diálogo do Comerciante -->
+        <!-- Carrinho: Nicho inferior direito -->
+        <ImageButton
+            android:id="@+id/btn_go_to_checkout"
+            android:layout_width="140dp"
+            android:layout_height="45dp"
+            app:layout_constraintHorizontal_bias="0.73"
+            app:layout_constraintVertical_bias="0.895"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@android:color/transparent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/carrinho" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Personagem Comerciante (Garante que os pés fiquem no chão com fitEnd) -->
+    <ImageView
+        android:id="@+id/iv_merchant_sprite"
+        android:layout_width="350dp"
+        android:layout_height="400dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="0dp"
+        android:scaleType="fitEnd"
+        android:elevation="10dp" />
+
+    <!-- Balão de Fala do Comerciante -->
     <LinearLayout
         android:id="@+id/layout_merchant_dialog"
-        android:layout_width="600dp"
-        android:layout_height="120dp"
+        android:layout_width="450dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="0dp"
         android:background="@drawable/box_message"
         android:orientation="vertical"
         android:padding="15dp"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:elevation="20dp">
 
         <TextView
             android:id="@+id/tv_merchant_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bem-vindo..."
+            android:text="..."
             android:textColor="#FFFFFF"
-            android:textSize="20sp" />
+            android:textSize="17sp"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="4dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
+            android:layout_marginTop="5dp"
             android:text="[Toque para continuar]"
             android:textColor="#FFD700"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Overlay Detalhes Item -->
@@ -188,7 +245,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:text="COMPRAR"
+                android:text="COLOCAR NO CARRINHO"
                 android:backgroundTint="#2E8B57" />
 
             <Button
