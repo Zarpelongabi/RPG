@@ -63,7 +63,7 @@
                 android:textSize="18sp" />
         </LinearLayout>
 
-        <androidx.appcompat.widget.AppCompatImageButton
+        <ImageButton
             android:id="@+id/btn_prev_category"
             android:layout_width="50dp"
             android:layout_height="100dp"
@@ -73,7 +73,7 @@
             android:src="@android:drawable/ic_media_previous"
             app:tint="#FFD700" />
 
-        <androidx.appcompat.widget.AppCompatImageButton
+        <ImageButton
             android:id="@+id/btn_next_category"
             android:layout_width="50dp"
             android:layout_height="100dp"
