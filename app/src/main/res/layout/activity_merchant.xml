@@ -11,7 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/battlebg2" />
+        android:src="@drawable/battlebg2"
+        android:contentDescription="@null" />
 
     <!-- Personagem Comerciante (Centralizado para Diálogo) -->
     <ImageView
@@ -20,7 +21,8 @@
         android:layout_height="350dp"
         android:layout_gravity="center_horizontal|bottom"
         android:layout_marginBottom="120dp"
-        android:scaleType="fitCenter" />
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
 
     <!-- Área da Loja (PvZ Style) -->
     <RelativeLayout
@@ -37,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:text="ESPADAS"
+            android:text="@string/shop_category_swords"
             android:textColor="#FFD700"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -52,13 +54,14 @@
             <ImageView
                 android:layout_width="25dp"
                 android:layout_height="25dp"
-                android:src="@drawable/moedas" />
+                android:src="@drawable/moedas"
+                android:contentDescription="@null" />
             <TextView
                 android:id="@+id/tv_shop_coins_internal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
-                android:text="0"
+                android:text="@string/initial_coins"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp" />
         </LinearLayout>
@@ -71,7 +74,8 @@
             android:layout_alignParentStart="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_media_previous"
-            app:tint="#FFD700" />
+            app:tint="#FFD700"
+            android:contentDescription="@null" />
 
         <ImageButton
             android:id="@+id/btn_next_category"
@@ -81,7 +85,8 @@
             android:layout_alignParentEnd="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_media_next"
-            app:tint="#FFD700" />
+            app:tint="#FFD700"
+            android:contentDescription="@null" />
 
         <GridLayout
             android:id="@+id/grid_shop_items"
@@ -99,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:text="VOLTAR"
+            android:text="@string/btn_back"
             android:backgroundTint="#8B4513"
             android:textColor="#FFFFFF" />
     </RelativeLayout>
@@ -121,7 +126,7 @@
             android:id="@+id/tv_merchant_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bem-vindo..."
+            android:text="@string/merchant_greeting"
             android:textColor="#FFFFFF"
             android:textSize="20sp" />
 
@@ -129,7 +134,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:text="[Toque para continuar]"
+            android:text="@string/tap_to_continue"
             android:textColor="#FFD700"
             android:textSize="12sp" />
     </LinearLayout>
@@ -155,7 +160,7 @@
                 android:id="@+id/tv_detail_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ITEM"
+                android:text="@string/item_placeholder"
                 android:textColor="#FFD700"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -165,14 +170,15 @@
                 android:layout_width="80dp"
                 android:layout_height="80dp"
                 android:layout_margin="10dp"
-                android:src="@drawable/moedas" />
+                android:src="@drawable/moedas"
+                android:contentDescription="@null" />
 
             <TextView
                 android:id="@+id/tv_detail_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="Info"
+                android:text="@string/info_placeholder"
                 android:textColor="#FFFFFF" />
 
             <TextView
@@ -180,7 +186,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Preço"
+                android:text="@string/price_label"
                 android:textColor="#00FF00" />
 
             <Button
