@@ -11,146 +11,59 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/battlebg2"
-        android:contentDescription="@null" />
 
-    <!-- Personagem Comerciante (Centralizado para Diálogo) -->
-    <ImageView
-        android:id="@+id/iv_merchant_sprite"
-        android:layout_width="300dp"
-        android:layout_height="350dp"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="120dp"
-        android:scaleType="fitCenter"
-        android:contentDescription="@null" />
-
-    <!-- Área da Loja (Tela Cheia - Estilo PvZ) -->
-    <RelativeLayout
         android:id="@+id/layout_shop_area"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
-        android:background="#000000">
 
-        <!-- Imagem de Fundo (loja_armas.png, etc.) ocupando tudo -->
         <ImageView
-            android:id="@+id/iv_shop_category_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:contentDescription="@null" />
 
-        <!-- Título: Posicionado no topo central -->
-        <TextView
-            android:id="@+id/tv_category_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="30dp"
-            android:text="@string/shop_category_swords"
-            android:textColor="#FFD700"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:shadowColor="#000000"
-            android:shadowRadius="5" />
 
-        <!-- Dinheiro: Alinhado com o ícone de moeda da imagem -->
-        <TextView
-            android:id="@+id/tv_shop_coins_internal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="32dp"
-            android:layout_marginEnd="95dp"
-            android:text="@string/initial_coins"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <!-- Botões de Navegação Invisíveis (sobre as setas da arte) -->
         <View
             android:id="@+id/btn_prev_category"
-            android:layout_width="80dp"
-            android:layout_height="150dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentStart="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true" />
 
         <View
             android:id="@+id/btn_next_category"
-            android:layout_width="80dp"
-            android:layout_height="150dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true" />
 
-        <!-- Itens da Loja (ajustados para as prateleiras) -->
-        <GridLayout
-            android:id="@+id/grid_shop_items"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:columnCount="3"
-            android:useDefaultMargins="true" />
 
-        <!-- Botão EXIT Invisível (canto inferior esquerdo) -->
         <View
             android:id="@+id/btn_close_merchant"
-            android:layout_width="120dp"
-            android:layout_height="50dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginBottom="55dp"
-            android:layout_marginStart="45dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true" />
 
-        <!-- Botão VOLTAR Visível (centralizado embaixo como na imagem) -->
-        <Button
-            android:id="@+id/btn_back_ui"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="25dp"
-            android:text="VOLTAR"
-            android:backgroundTint="#6D3B18"
-            android:textColor="#FFFFFF" />
-    </RelativeLayout>
 
-    <!-- Caixa de Diálogo do Comerciante -->
     <LinearLayout
         android:id="@+id/layout_merchant_dialog"
-        android:layout_width="600dp"
-        android:layout_height="120dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="20dp"
         android:background="@drawable/box_message"
         android:orientation="vertical"
         android:padding="15dp"
         android:clickable="true"
-        android:focusable="true">
 
         <TextView
             android:id="@+id/tv_merchant_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/merchant_greeting"
             android:textColor="#FFFFFF"
-            android:textSize="20sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:text="@string/tap_to_continue"
             android:textColor="#FFD700"
-            android:textSize="12sp" />
     </LinearLayout>
 
     <!-- Overlay Detalhes Item -->
@@ -174,7 +87,6 @@
                 android:id="@+id/tv_detail_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/item_placeholder"
                 android:textColor="#FFD700"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -184,15 +96,12 @@
                 android:layout_width="80dp"
                 android:layout_height="80dp"
                 android:layout_margin="10dp"
-                android:src="@drawable/moedas"
-                android:contentDescription="@null" />
 
             <TextView
                 android:id="@+id/tv_detail_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="@string/info_placeholder"
                 android:textColor="#FFFFFF" />
 
             <TextView
@@ -200,7 +109,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="@string/price_label"
                 android:textColor="#00FF00" />
 
             <Button
@@ -208,7 +116,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:text="COMPRAR"
                 android:backgroundTint="#2E8B57" />
 
             <Button
