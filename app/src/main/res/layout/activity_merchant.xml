@@ -24,88 +24,102 @@
         android:scaleType="fitCenter"
         android:contentDescription="@null" />
 
-    <!-- Área da Loja (PvZ Style) -->
+    <!-- Área da Loja (Tela Cheia - Estilo PvZ) -->
     <RelativeLayout
         android:id="@+id/layout_shop_area"
-        android:layout_width="500dp"
-        android:layout_height="350dp"
-        android:layout_gravity="center"
-        android:background="@drawable/box_message"
-        android:padding="15dp"
-        android:visibility="gone">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:background="#000000">
 
+        <!-- Imagem de Fundo (loja_armas.png, etc.) ocupando tudo -->
+        <ImageView
+            android:id="@+id/iv_shop_category_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@null" />
+
+        <!-- Título: Posicionado no topo central -->
         <TextView
             android:id="@+id/tv_category_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
+            android:layout_marginTop="30dp"
             android:text="@string/shop_category_swords"
             android:textColor="#FFD700"
-            android:textSize="24sp"
+            android:textSize="28sp"
             android:textStyle="bold"
             android:shadowColor="#000000"
-            android:shadowRadius="3" />
+            android:shadowRadius="5" />
 
-        <LinearLayout
+        <!-- Dinheiro: Alinhado com o ícone de moeda da imagem -->
+        <TextView
+            android:id="@+id/tv_shop_coins_internal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:gravity="center_vertical">
-            <ImageView
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:src="@drawable/moedas"
-                android:contentDescription="@null" />
-            <TextView
-                android:id="@+id/tv_shop_coins_internal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:text="@string/initial_coins"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp" />
-        </LinearLayout>
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="95dp"
+            android:text="@string/initial_coins"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-        <ImageButton
+        <!-- Botões de Navegação Invisíveis (sobre as setas da arte) -->
+        <View
             android:id="@+id/btn_prev_category"
-            android:layout_width="50dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="150dp"
             android:layout_centerVertical="true"
             android:layout_alignParentStart="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_previous"
-            app:tint="#FFD700"
-            android:contentDescription="@null" />
+            android:clickable="true"
+            android:focusable="true" />
 
-        <ImageButton
+        <View
             android:id="@+id/btn_next_category"
-            android:layout_width="50dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="150dp"
             android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_next"
-            app:tint="#FFD700"
-            android:contentDescription="@null" />
+            android:clickable="true"
+            android:focusable="true" />
 
+        <!-- Itens da Loja (ajustados para as prateleiras) -->
         <GridLayout
             android:id="@+id/grid_shop_items"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:columnCount="3"
-            android:rowCount="1"
-            android:alignmentMode="alignMargins"
             android:useDefaultMargins="true" />
 
-        <Button
+        <!-- Botão EXIT Invisível (canto inferior esquerdo) -->
+        <View
             android:id="@+id/btn_close_merchant"
+            android:layout_width="120dp"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="55dp"
+            android:layout_marginStart="45dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Botão VOLTAR Visível (centralizado embaixo como na imagem) -->
+        <Button
+            android:id="@+id/btn_back_ui"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:text="@string/btn_back"
-            android:backgroundTint="#8B4513"
+            android:layout_marginBottom="25dp"
+            android:text="VOLTAR"
+            android:backgroundTint="#6D3B18"
             android:textColor="#FFFFFF" />
     </RelativeLayout>
 

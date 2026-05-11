@@ -29,7 +29,7 @@ import java.util.List;
 
 public class MerchantActivity extends AppCompatActivity {
 
-    private ImageView ivMerchantSprite;
+    private ImageView ivMerchantSprite, ivShopCategoryBg;
     private TextView tvMerchantMessage, tvShopCoins, tvCategoryTitle;
     private View layoutShopArea, layoutMerchantDialog;
     private FrameLayout itemDetailOverlay;
@@ -75,6 +75,7 @@ public class MerchantActivity extends AppCompatActivity {
         tvMerchantMessage = findViewById(R.id.tv_merchant_message);
         tvShopCoins = findViewById(R.id.tv_shop_coins_internal);
         tvCategoryTitle = findViewById(R.id.tv_category_title);
+        ivShopCategoryBg = findViewById(R.id.iv_shop_category_bg);
         gridShopItems = findViewById(R.id.grid_shop_items);
         btnPrev = findViewById(R.id.btn_prev_category);
         btnNext = findViewById(R.id.btn_next_category);
@@ -123,17 +124,18 @@ public class MerchantActivity extends AppCompatActivity {
         currentDialogueStep++;
         switch (currentDialogueStep) {
             case 1:
-                // Frame 1: Conversando
+                // Frame 1: Conversa
                 mostrarFrame(0); 
-                escreverMensagem("Saudações, nobre viajante! Que bom encontrar alguém nestas terras.");
+                escreverMensagem("Saudações, nobre viajante! Que bom encontrar uma alma viva nestas estradas perigosas.");
                 break;
             case 2:
-                // Frame 3: Mostrando item
+                // Frame 3: Convite (Mostrando a carroça)
                 mostrarFrame(2);
-                escreverMensagem("Dê uma olhada no que eu trouxe na minha carroça hoje. Apenas produtos de qualidade!");
+                escreverMensagem("Dê uma olhada nas raridades que recuperei de ruínas antigas. Tenho certeza que algo lhe servirá!");
                 break;
             case 3:
-                // Troca para o modo Loja (Estilo PvZ)
+                // Transição para a Loja (Interface PvZ)
+                layoutMerchantDialog.setOnClickListener(null);
                 layoutMerchantDialog.setVisibility(View.GONE);
                 mostrarLojaComAnimacao();
                 atualizarPrateleira();
@@ -144,9 +146,11 @@ public class MerchantActivity extends AppCompatActivity {
     private void despedida() {
         layoutShopArea.setVisibility(View.GONE);
         layoutMerchantDialog.setVisibility(View.VISIBLE);
-        // Frame 4: Dando tchau
+        
+        // Frame 4: Despedida (Acenando)
         mostrarFrame(3);
-        escreverMensagem("Tenha uma jornada segura, meu amigo! Até a próxima.", () -> {
+        
+        escreverMensagem("Tenha uma jornada segura, meu amigo! Que o aço da sua espada nunca perca o fio.", () -> {
             layoutMerchantDialog.setOnClickListener(v -> finalizar());
         });
     }
@@ -155,8 +159,13 @@ public class MerchantActivity extends AppCompatActivity {
         if (tvShopCoins != null) tvShopCoins.setText(String.valueOf(playerCoins));
     }
 
+    @SuppressWarnings("DiscouragedApi")
     private void carregarSprites() {
-        Bitmap sheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_comerciante);
+        // Usando getIdentifier para contornar falhas de indexação do R.drawable
+        int resId = getResources().getIdentifier("sprite_comerciante", "drawable", getPackageName());
+        if (resId == 0) return;
+
+        Bitmap sheet = BitmapFactory.decodeResource(getResources(), resId);
         if (sheet != null) {
             merchantFrames = new Bitmap[4];
             int fw = sheet.getWidth() / 4;
@@ -187,9 +196,22 @@ public class MerchantActivity extends AppCompatActivity {
                 .start();
     }
 
+    @SuppressWarnings("DiscouragedApi")
     private void atualizarPrateleira() {
         tvCategoryTitle.setText(categories[currentCategoryIndex]);
         gridShopItems.removeAllViews();
+
+        // Atualiza fundo temático
+        String bgName = "";
+        switch (categories[currentCategoryIndex]) {
+            case "ESPADAS": bgName = "loja_armas"; break;
+            case "ARMADURAS": bgName = "loja_armaduras"; break;
+            case "POÇÕES": bgName = "loja_itens"; break;
+        }
+        int bgResId = getResources().getIdentifier(bgName, "drawable", getPackageName());
+        if (bgResId != 0 && ivShopCategoryBg != null) {
+            ivShopCategoryBg.setImageResource(bgResId);
+        }
         
         List<Item> itemsDaCategoria = getItemsPorCategoria(categories[currentCategoryIndex]);
         for (Item item : itemsDaCategoria) {
@@ -203,22 +225,22 @@ public class MerchantActivity extends AppCompatActivity {
             case "ESPADAS":
                 list.add(new Sword("Adaga", 25, 3, "Comum", 1));
                 list.add(new Sword("Katana", 50, 5, "Comum", 1));
-                list.add(new Sword("Longa", 80, 7, "Comum", 1));
+                list.add(new Sword("Espada Longa", 80, 7, "Comum", 1));
                 break;
             case "ARMADURAS":
-                list.add(new Item("Couro", 30, 1));
-                list.add(new Item("Ferro", 60, 2));
-                list.add(new Item("Real", 120, 3));
+                list.add(new Item("Peitoral Leve", 30, 1));
+                list.add(new Item("Peitoral Medio", 60, 2));
+                list.add(new Item("Peitoral Pesado", 120, 3));
                 break;
             case "POÇÕES":
-                list.add(new Potion("Pequena", 10, 1, 20));
-                list.add(new Potion("Média", 25, 1, 50));
+                list.add(new Potion("Pocao", 10, 1, 20));
                 list.add(new Potion("Elixir", 60, 1, 100));
                 break;
         }
         return list;
     }
 
+    @SuppressWarnings("DiscouragedApi")
     private void adicionarItemAoGrid(Item item) {
         LinearLayout slot = new LinearLayout(this);
         slot.setOrientation(LinearLayout.VERTICAL);
@@ -226,7 +248,12 @@ public class MerchantActivity extends AppCompatActivity {
         slot.setPadding(10, 10, 10, 10);
         
         ImageView icon = new ImageView(this);
-        icon.setImageResource(R.drawable.moedas); // Placeholder
+        // Busca ícone dinamicamente baseado no nome do item (em lowercase)
+        String iconName = item.getName().toLowerCase().replace(" ", "_");
+        int resId = getResources().getIdentifier(iconName, "drawable", getPackageName());
+        if (resId == 0) resId = getResources().getIdentifier("moedas", "drawable", getPackageName());
+        
+        icon.setImageResource(resId);
         int iconSize = (int) (60 * getResources().getDisplayMetrics().density);
         icon.setLayoutParams(new LinearLayout.LayoutParams(iconSize, iconSize));
         
@@ -238,21 +265,25 @@ public class MerchantActivity extends AppCompatActivity {
 
         slot.addView(icon);
         slot.addView(name);
-        slot.setOnClickListener(v -> mostrarDetalhes(item));
+        slot.setOnClickListener(v -> mostrarDetalhes(item, iconName));
         gridShopItems.addView(slot);
     }
 
-    private void mostrarDetalhes(Item item) {
+    @SuppressWarnings("DiscouragedApi")
+    private void mostrarDetalhes(Item item, String iconName) {
         selectedItem = item;
         tvDetailName.setText(item.getName());
-        tvDetailPrice.setText("Preço: " + item.getValue() + " Moedas");
-        ivDetailIcon.setImageResource(R.drawable.moedas); // Placeholder
+        tvDetailPrice.setText(getString(R.string.price_label) + ": " + item.getValue());
+        
+        int resId = getResources().getIdentifier(iconName, "drawable", getPackageName());
+        if (resId == 0) resId = getResources().getIdentifier("moedas", "drawable", getPackageName());
+        ivDetailIcon.setImageResource(resId);
         
         // Frame 2: Falando preço
         mostrarFrame(1); 
         
-        String info = "Tipo: " + (item instanceof Sword ? "Espada" : (item instanceof Potion ? "Poção" : "Item"));
-        tvDetailInfo.setText(info);
+        String typeStr = (item instanceof Sword ? "Espada" : (item instanceof Potion ? "Poção" : "Armadura"));
+        tvDetailInfo.setText("Tipo: " + typeStr + "\n" + (item.getSize() > 1 ? "Ocupa " + item.getSize() + " slots" : "Item Leve"));
         itemDetailOverlay.setVisibility(View.VISIBLE);
     }
 
@@ -300,9 +331,13 @@ public class MerchantActivity extends AppCompatActivity {
     private void finalizar() {
         Intent result = new Intent();
         result.putExtra("p_coins", playerCoins);
-        try {
-            result.putExtra("inventory_json", inventory.toJSON().toString());
-        } catch (Exception e) {}
+        if (inventory != null) {
+            try {
+                result.putExtra("inventory_json", inventory.toJSON().toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         setResult(RESULT_OK, result);
         finish();
     }

@@ -1,9 +1,13 @@
 <resources>
     <string name="app_name">The Last Roar</string>
     <string name="shop_category_swords">ESPADAS</string>
+    <string name="shop_category_armors">ARMADURAS</string>
+    <string name="shop_category_potions">POÇÕES</string>
     <string name="initial_coins">0</string>
     <string name="btn_back">VOLTAR</string>
-    <string name="merchant_greeting">Bem-vindo...</string>
+    <string name="merchant_greeting">Saudações, nobre viajante! Que bom encontrar uma alma viva nestas estradas perigosas.</string>
+    <string name="merchant_invite">Dê uma olhada nas raridades que recuperei de ruínas antigas. Tenho certeza que algo lhe servirá!</string>
+    <string name="merchant_farewell">Tenha uma jornada segura, meu amigo! Que o aço da sua espada nunca perca o fio.</string>
     <string name="tap_to_continue">[Toque para continuar]</string>
     <string name="item_placeholder">ITEM</string>
     <string name="info_placeholder">Info</string>

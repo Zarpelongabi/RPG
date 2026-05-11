@@ -1,7 +1,5 @@
 package com.example.rpg_definitivo;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
@@ -24,10 +22,10 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import com.example.rpg_definitivo.R;
 
 public class BattleActivity extends Activity {
 
@@ -38,7 +36,7 @@ public class BattleActivity extends Activity {
     private FrameLayout rootLayout;
 
     private int playerMaxHp, playerHp, playerLevel, playerXp, xpToNextLevel, playerCoins;
-    private int enemyMaxHp = 25, enemyHp = 25, enemyDamage = 6, enemyXpReward = 8;
+    private int enemyMaxHp = 25, enemyHp = 25, enemyXpReward = 8, enemyCoinReward = 5;
     private int enemyResId;
 
     private int playerFrame = 0, enemyFrame = 0;
@@ -69,7 +67,6 @@ public class BattleActivity extends Activity {
         
         equippedSword = (com.example.rpg_definitivo.backend.models.Sword) getIntent().getSerializableExtra("equipped_sword");
 
-        // Fade in inicial
         rootLayout.setAlpha(0f);
         rootLayout.animate().alpha(1f).setDuration(1000).start();
 
@@ -91,7 +88,6 @@ public class BattleActivity extends Activity {
         btnSkill = findViewById(R.id.btn_skill);
         btnItem = findViewById(R.id.btn_item);
 
-        // Flash Layer para impactos visuais
         ivFlash = new ImageView(this);
         ivFlash.setLayoutParams(new FrameLayout.LayoutParams(-1, -1));
         ivFlash.setBackgroundColor(Color.WHITE);
@@ -108,6 +104,7 @@ public class BattleActivity extends Activity {
         btnItem.setOnClickListener(v -> animarBotao(v));
     }
 
+    @SuppressWarnings("DiscouragedApi")
     private void carregarStatus() {
         playerHp = getIntent().getIntExtra("p_hp", 100);
         playerMaxHp = getIntent().getIntExtra("p_max_hp", 100);
@@ -121,48 +118,51 @@ public class BattleActivity extends Activity {
         
         enemyResId = getIntent().getIntExtra("enemy_res", 0);
         
-        // Carrega as Sheets
-        playerSheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_batalhapersonagem);
+        // Recompensas dinâmicas
+        enemyMaxHp = getIntent().getIntExtra("enemy_hp", 25);
+        enemyXpReward = getIntent().getIntExtra("enemy_xp", 8);
+        enemyCoinReward = getIntent().getIntExtra("enemy_coins", 5);
         
-        // Correção do Goblin e outros inimigos
-        if (enemyResId != 0) {
-            enemySheet = BitmapFactory.decodeResource(getResources(), enemyResId);
-        }
-        
-        // Se ainda for nulo (ou se o ID veio errado), tenta o goblin padrão
-        if (enemySheet == null) {
-            enemySheet = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_batalhagoblin);
+        try {
+            int resP = getResources().getIdentifier("sprite_batalhapersonagem", "drawable", getPackageName());
+            playerSheet = BitmapFactory.decodeResource(getResources(), resP != 0 ? resP : R.drawable.npc_vendedor);
+            
+            if (enemyResId != 0) {
+                enemySheet = BitmapFactory.decodeResource(getResources(), enemyResId);
+            }
+            
+            if (enemySheet == null) {
+                int resG = getResources().getIdentifier("sprite_batalhagoblin", "drawable", getPackageName());
+                if (resG != 0) {
+                    enemySheet = BitmapFactory.decodeResource(getResources(), resG);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         enemyHp = enemyMaxHp;
         pbEnemyHp.setMax(enemyMaxHp);
         pbEnemyHp.setProgress(enemyHp);
         
-        // Sincroniza HUD inicial sem animação
         atualizarHUD(false);
 
-        // Aplica escala baseada no tipo de inimigo (Pokémon style)
-        // Jogador base é 220dp no XML
         float playerBaseSize = 220;
         String eName = tvEnemyName.getText().toString().toLowerCase();
         
         android.view.ViewGroup.LayoutParams params = ivEnemy.getLayoutParams();
         if (eName.contains("boss")) {
-            // Boss 10% maior que o herói
             params.width = (int) (playerBaseSize * 1.1 * getResources().getDisplayMetrics().density);
             params.height = (int) (playerBaseSize * 1.1 * getResources().getDisplayMetrics().density);
         } else if (eName.contains("experiente")) {
-            // Experiente 10% menor que o herói
             params.width = (int) (playerBaseSize * 0.9 * getResources().getDisplayMetrics().density);
             params.height = (int) (playerBaseSize * 0.9 * getResources().getDisplayMetrics().density);
         } else {
-            // Normal 20% menor que o herói
             params.width = (int) (playerBaseSize * 0.8 * getResources().getDisplayMetrics().density);
             params.height = (int) (playerBaseSize * 0.8 * getResources().getDisplayMetrics().density);
         }
         ivEnemy.setLayoutParams(params);
         
-        // Inicia ciclo de animação de frames (recortando a sheet)
         iniciarAnimacaoFrames();
     }
 
@@ -170,7 +170,6 @@ public class BattleActivity extends Activity {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                // Jogador
                 if (playerSheet != null) {
                     ivPlayer.setImageBitmap(getFrame(playerSheet, isPlayerAnimatingFrames ? playerFrame : 0, 3));
                     if (isPlayerAnimatingFrames) {
@@ -179,7 +178,6 @@ public class BattleActivity extends Activity {
                         playerFrame = 0;
                     }
                 }
-                // Inimigo
                 if (enemySheet != null) {
                     ivEnemy.setImageBitmap(getFrame(enemySheet, isEnemyAnimatingFrames ? enemyFrame : 0, 3));
                     if (isEnemyAnimatingFrames) {
@@ -188,8 +186,6 @@ public class BattleActivity extends Activity {
                         enemyFrame = 0;
                     }
                 }
-                
-                // Velocidade adaptativa: 150ms em combate, mas pode ser menor se precisar
                 handler.postDelayed(this, 150);
             }
         });
@@ -197,16 +193,10 @@ public class BattleActivity extends Activity {
 
     private Bitmap getFrame(Bitmap sheet, int frame, int totalFrames) {
         if (sheet == null) return null;
-        
-        // Garante que o recorte seja baseado na largura REAL da imagem carregada
-        // O Android às vezes faz scale automático no BitmapFactory dependendo da densidade
         int sheetWidth = sheet.getWidth();
         int sheetHeight = sheet.getHeight();
         int frameWidth = sheetWidth / totalFrames;
-        
-        // Segurança para não estourar o limite da imagem
         int startX = Math.min(frame * frameWidth, sheetWidth - frameWidth);
-        
         return Bitmap.createBitmap(sheet, startX, 0, frameWidth, sheetHeight);
     }
 
@@ -214,8 +204,6 @@ public class BattleActivity extends Activity {
         PopupMenu p = new PopupMenu(this, v);
         p.getMenu().add("Golpe Cortante");
         p.getMenu().add("Ataque Furtivo");
-        
-        // Remove modo teste em produção ou mantém se o usuário quiser
         p.getMenu().add("Modo Teste (0 Dano)");
 
         p.setOnMenuItemClickListener(item -> {
@@ -228,13 +216,11 @@ public class BattleActivity extends Activity {
     private void executarAtaqueJogador(boolean isTest) {
         isPlayerTurn = false;
         setButtonsEnabled(false);
-        isPlayerAnimatingFrames = true; // Começa a animar o spritesheet
+        isPlayerAnimatingFrames = true;
 
-        // Animação Squash & Stretch (Preparação)
         ivPlayer.animate().translationXBy(140).scaleX(1.2f).scaleY(0.8f).setDuration(150)
                 .setInterpolator(new AccelerateInterpolator()).withEndAction(() -> {
             
-            // Impacto
             boolean critResult = false;
             int danoResult;
 
@@ -259,10 +245,9 @@ public class BattleActivity extends Activity {
             enemyHp = Math.max(0, enemyHp - finalDano);
             ObjectAnimator.ofInt(pbEnemyHp, "progress", enemyHp).setDuration(400).start();
 
-            // Retorno
             ivPlayer.animate().translationX(0).scaleX(1f).scaleY(1f).setDuration(300)
                     .setInterpolator(new DecelerateInterpolator()).withEndAction(() -> {
-                isPlayerAnimatingFrames = false; // Para de animar o spritesheet
+                isPlayerAnimatingFrames = false;
                 escreverMensagem(finalCrit ? "GOLPE CRÍTICO! " + finalDano + " de dano!" : "Você causou " + finalDano + " de dano.");
                 handler.postDelayed(() -> { if (enemyHp <= 0) vitoria(); else turnoInimigo(); }, 1500);
             }).start();
@@ -270,10 +255,9 @@ public class BattleActivity extends Activity {
     }
 
     private void turnoInimigo() {
-        isEnemyAnimatingFrames = true; // Começa a animar o goblin
+        isEnemyAnimatingFrames = true;
         ivEnemy.animate().translationXBy(-100).setDuration(250).withEndAction(() -> {
-            // Lógica de Dano solicitada: 10 fixo, Crítico (1/20) = 20
-            boolean criticoInimigo = Math.random() < 0.05; // 1/20 = 5%
+            boolean criticoInimigo = Math.random() < 0.05;
             int dano = criticoInimigo ? 20 : 10;
             
             playerHp = Math.max(0, playerHp - dano);
@@ -285,7 +269,7 @@ public class BattleActivity extends Activity {
             atualizarHUD(true);
 
             ivEnemy.animate().translationX(0).setDuration(300).withEndAction(() -> {
-                isEnemyAnimatingFrames = false; // Para de animar o goblin
+                isEnemyAnimatingFrames = false;
                 String msg = criticoInimigo ? "GOLPE LETAL! " + playerName + " perdeu " + dano + " de vida!" : "O inimigo atacou! " + playerName + " perdeu " + dano + " de vida.";
                 escreverMensagem(msg);
                 if (playerHp <= 0) gameOver();
@@ -323,7 +307,7 @@ public class BattleActivity extends Activity {
         ivEnemy.animate().alpha(0).scaleX(0).scaleY(0).setDuration(800).start();
         handler.postDelayed(() -> {
             playerXp += enemyXpReward;
-            playerCoins += 1; // Recompensa de 1 moeda por vitória
+            playerCoins += enemyCoinReward;
             boolean subiu = false;
             while (playerXp >= xpToNextLevel) {
                 playerXp -= xpToNextLevel; playerLevel++; playerMaxHp += 20; playerHp = playerMaxHp;
@@ -403,29 +387,21 @@ public class BattleActivity extends Activity {
     private void fugir() { escreverMensagem("Você escapou!"); handler.postDelayed(this::finish, 1000); }
     private void gameOver() {
         escreverMensagem("");
-        
         View gameOverContainer = findViewById(R.id.container_game_over);
         if (gameOverContainer == null) return;
-
         gameOverContainer.setVisibility(View.VISIBLE);
         gameOverContainer.setAlpha(0f);
-        
         Button btnRetry = findViewById(R.id.btn_game_over_retry);
         Button btnQuit = findViewById(R.id.btn_game_over_quit);
-
         btnRetry.setOnClickListener(v -> {
             animarBotao(v);
-            // Reinicia a batalha ou volta para o último ponto? 
-            // Por enquanto, volta para o menu principal limpo como solicitado anteriormente
             startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
             finish();
         });
-
         btnQuit.setOnClickListener(v -> {
             animarBotao(v);
             finish();
         });
-
         gameOverContainer.animate().alpha(1f).setDuration(2000).start();
         ivPlayer.animate().alpha(0).setDuration(2000).start();
     }

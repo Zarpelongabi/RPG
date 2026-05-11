@@ -672,15 +672,15 @@ public class NovoJogoActivity extends Activity {
             lastEnemyIndex = -1;
             isPaused = false;
         } else if (requestCode == 200) {
+            isPaused = false;
             if (resultCode == RESULT_OK && data != null) {
                 playerCoins = data.getIntExtra("p_coins", playerCoins);
+                updateHUD();
                 String invJson = data.getStringExtra("inventory_json");
                 if (invJson != null) {
                     inventory = com.example.rpg_definitivo.backend.managers.Inventory.fromJSON(invJson);
                 }
-                updateHUD();
             }
-            isPaused = false;
         }
     }
 
